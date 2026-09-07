@@ -40,8 +40,23 @@ description: When to use    # 必需，1-2 句话
 解析规则：
 - `name` 和 `description` 为必需字段，缺失则校验失败
 - `name` 映射为 `skill.slug`（首次发布时），后续版本不可变更
-- `description` 映射为 `skill.summary`
+- `name` 和 `description` 作为没有根目录 `README.md` 时的展示信息回退值
 - frontmatter 完整解析结果存入 `skill_version.parsed_metadata_json`
+
+SkillHub 展示信息扩展：
+
+```markdown
+# 中文展示名称
+
+> 一句话中文简介。
+```
+
+- 根目录存在 `README.md` 时，首个非空行必须是一级标题，并映射为 `skill.displayName`
+- 一级标题后的首个非空行必须是引用，并映射为 `skill.summary`
+- 展示名称和简介均不得超过 200 个字符
+- `README.md` 存在但不符合以上格式时，发布校验失败
+- 没有 `README.md` 的兼容技能继续使用 `SKILL.md` 的 `name` 和 `description`
+- 展示信息不改变 `skill.slug`、安装坐标或技能包内的 `SKILL.md`
 
 平台扩展字段（可选，`x-astron-` 前缀）：
 
@@ -108,6 +123,7 @@ Runtime 集成边界：
 ```
 my-skill/
 ├── SKILL.md              # 主入口文件（必需）
+├── README.md             # SkillHub 展示文档（推荐）
 ├── references/           # 参考资料（可选）
 ├── scripts/              # 脚本（可选）
 └── assets/               # 静态资源（可选）

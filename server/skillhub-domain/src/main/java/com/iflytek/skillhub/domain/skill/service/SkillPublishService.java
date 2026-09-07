@@ -18,6 +18,8 @@ import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
 import com.iflytek.skillhub.domain.skill.*;
 import com.iflytek.skillhub.domain.skill.metadata.ComplianceMetadataService;
 import com.iflytek.skillhub.domain.skill.metadata.ComplianceSnapshot;
+import com.iflytek.skillhub.domain.skill.metadata.ReadmePresentationParser;
+import com.iflytek.skillhub.domain.skill.metadata.ReadmePresentationParser.Presentation;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadata;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadataParser;
 import com.iflytek.skillhub.domain.skill.validation.PackageEntry;
@@ -39,6 +41,7 @@ import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Clock;
 import java.time.Instant;
@@ -88,6 +91,7 @@ public class SkillPublishService {
     private final SkillPackageValidator skillPackageValidator;
     private final SkillMetadataParser skillMetadataParser;
     private final ComplianceMetadataService complianceMetadataService = new ComplianceMetadataService();
+    private final ReadmePresentationParser readmePresentationParser = new ReadmePresentationParser();
     private final PrePublishValidator prePublishValidator;
     private final ObjectMapper objectMapper;
     private final ReviewTaskRepository reviewTaskRepository;
@@ -208,6 +212,13 @@ public class SkillPublishService {
             metadata = skillMetadataParser.parse(new String(skillMd.content(), java.nio.charset.StandardCharsets.UTF_8));
         } catch (Exception e) {
             errors.add("Invalid SKILL.md: " + e.getMessage());
+            return new DryRunResult(false, errors, warnings, null, null);
+        }
+
+        try {
+            resolvePresentation(entries, metadata);
+        } catch (DomainBadRequestException e) {
+            errors.add("Invalid README.md presentation metadata: " + e.getMessage());
             return new DryRunResult(false, errors, warnings, null, null);
         }
 
@@ -371,6 +382,7 @@ public class SkillPublishService {
 
         String skillMdContent = new String(skillMd.content());
         SkillMetadata metadata = skillMetadataParser.parse(skillMdContent);
+        Presentation presentation = resolvePresentation(entries, metadata);
         if (metadata.version() == null || metadata.version().isBlank()) {
             String autoVersion = AUTO_VERSION_FORMATTER.format(currentTime());
             metadata = new SkillMetadata(metadata.name(), metadata.description(), autoVersion, metadata.body(), metadata.frontmatter());
@@ -481,7 +493,8 @@ public class SkillPublishService {
 
         // Store metadata as JSON
         try {
-            String metadataJson = objectMapper.writeValueAsString(buildParsedMetadata(metadata, complianceSnapshot));
+            String metadataJson = objectMapper.writeValueAsString(
+                    buildParsedMetadata(metadata, complianceSnapshot, presentation));
             version.setParsedMetadataJson(metadataJson);
             version.setManifestJson(objectMapper.writeValueAsString(buildManifest(entries)));
         } catch (Exception e) {
@@ -579,8 +592,8 @@ public class SkillPublishService {
         }
 
         // 12. Update skill metadata and move the published pointer for auto-publish flows
-        skill.setDisplayName(metadata.name());
-        skill.setSummary(metadata.description());
+        skill.setDisplayName(presentation.displayName());
+        skill.setSummary(presentation.summary());
         if (autoPublish || visibility == SkillVisibility.PRIVATE) {
             // Update latestVersionId for autoPublish or PRIVATE skill (UPLOADED status)
             skill.setLatestVersionId(version.getId());
@@ -755,15 +768,29 @@ public class SkillPublishService {
                 .toList();
     }
 
-    private Map<String, Object> buildParsedMetadata(SkillMetadata metadata, ComplianceSnapshot complianceSnapshot) {
+    private Map<String, Object> buildParsedMetadata(
+            SkillMetadata metadata,
+            ComplianceSnapshot complianceSnapshot,
+            Presentation presentation) {
         Map<String, Object> parsedMetadata = new LinkedHashMap<>();
         parsedMetadata.put("name", metadata.name());
         parsedMetadata.put("description", metadata.description());
+        parsedMetadata.put("displayName", presentation.displayName());
+        parsedMetadata.put("summary", presentation.summary());
         parsedMetadata.put("version", metadata.version());
         parsedMetadata.put("body", metadata.body());
         parsedMetadata.put("frontmatter", metadata.frontmatter());
         parsedMetadata.put(ComplianceMetadataService.SNAPSHOT_FIELD_NAME, complianceSnapshot);
         return parsedMetadata;
+    }
+
+    private Presentation resolvePresentation(List<PackageEntry> entries, SkillMetadata metadata) {
+        return entries.stream()
+                .filter(entry -> "README.md".equals(entry.path()))
+                .findFirst()
+                .map(entry -> readmePresentationParser.parse(
+                        new String(entry.content(), StandardCharsets.UTF_8)))
+                .orElseGet(() -> new Presentation(metadata.name(), metadata.description()));
     }
 
     private byte[] buildBundle(List<PackageEntry> entries) {
