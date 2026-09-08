@@ -227,6 +227,7 @@ export function PublishPage() {
 
         <div className="space-y-3">
           <Label className="text-sm font-semibold font-heading">{t('publish.file')}</Label>
+          <p className="text-sm text-muted-foreground whitespace-pre-line">{t('webResource.uploadHint')}</p>
           <UploadZone
             onFileSelect={handleFileSelect}
             onFolderSelect={handleFolderSelect}

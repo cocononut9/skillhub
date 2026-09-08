@@ -103,7 +103,8 @@ public class JpaMySkillQueryRepository implements MySkillQueryRepository {
                 toLifecycleVersion(ownerPreviewVersion),
                 projection.resolutionMode().name(),
                 null,
-                null
+                null,
+                skill.getResourceType().name()
         );
     }
 

@@ -1731,5 +1731,11 @@
     "unfreezeErrorTitle": "Failed to unfreeze namespace",
     "archiveErrorTitle": "Failed to archive namespace",
     "restoreErrorTitle": "Failed to restore namespace"
-  }
+  },
+  "webResource": {
+  "type": "Website",
+  "open": "Open tool",
+  "unavailable": "The website link is available after publication and while the resource is active.",
+  "uploadHint": "Upload a skill or website ZIP. Website packages need only README.md with a title, quoted summary, 资源类型：网页 and 使用入口：https://your-site.example."
+}
 }

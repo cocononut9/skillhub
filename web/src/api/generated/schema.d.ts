@@ -4606,6 +4606,7 @@ export interface components {
             resolutionMode?: string;
             complianceSnapshot?: components["schemas"]["ComplianceSnapshotResponse"];
             labels?: components["schemas"]["SkillLabelDto"][];
+            resourceType?: string;
         };
         ApiResponseBoolean: {
             /** Format: int32 */
@@ -4862,6 +4863,7 @@ export interface components {
             ownerPreviewVersion?: components["schemas"]["SkillLifecycleVersionResponse"];
             ownerPreviewReviewComment?: string;
             resolutionMode?: string;
+            resourceType?: string;
         };
         ApiResponseReviewSkillDetailResponse: {
             /** Format: int32 */

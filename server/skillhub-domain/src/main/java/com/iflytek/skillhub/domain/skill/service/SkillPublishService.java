@@ -21,6 +21,7 @@ import com.iflytek.skillhub.domain.skill.metadata.ComplianceSnapshot;
 import com.iflytek.skillhub.domain.skill.metadata.ReadmePresentationParser;
 import com.iflytek.skillhub.domain.skill.metadata.ReadmePresentationParser.Presentation;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadata;
+import com.iflytek.skillhub.domain.skill.metadata.WebResourceMetadataParser;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadataParser;
 import com.iflytek.skillhub.domain.skill.validation.PackageEntry;
 import com.iflytek.skillhub.domain.skill.validation.PrePublishValidator;
@@ -91,6 +92,7 @@ public class SkillPublishService {
     private final SkillPackageValidator skillPackageValidator;
     private final SkillMetadataParser skillMetadataParser;
     private final ComplianceMetadataService complianceMetadataService = new ComplianceMetadataService();
+    private final WebResourceMetadataParser webMetadataParser = new WebResourceMetadataParser();
     private final ReadmePresentationParser readmePresentationParser = new ReadmePresentationParser();
     private final PrePublishValidator prePublishValidator;
     private final ObjectMapper objectMapper;
@@ -197,21 +199,11 @@ public class SkillPublishService {
             return new DryRunResult(false, errors, warnings, null, null);
         }
 
-        // 4. Parse SKILL.md
-        PackageEntry skillMd = entries.stream()
-                .filter(e -> e.path().equals("SKILL.md"))
-                .findFirst()
-                .orElse(null);
-        if (skillMd == null) {
-            errors.add("Missing required file: SKILL.md at root");
-            return new DryRunResult(false, errors, warnings, null, null);
-        }
-
         SkillMetadata metadata;
         try {
-            metadata = skillMetadataParser.parse(new String(skillMd.content(), java.nio.charset.StandardCharsets.UTF_8));
+            metadata = parsePackageMetadata(entries);
         } catch (Exception e) {
-            errors.add("Invalid SKILL.md: " + e.getMessage());
+            errors.add("Invalid package metadata: " + e.getMessage());
             return new DryRunResult(false, errors, warnings, null, null);
         }
 
@@ -374,14 +366,8 @@ public class SkillPublishService {
                     String.join(", ", packageValidation.errors()));
         }
 
-        // 4. Parse SKILL.md
-        PackageEntry skillMd = entries.stream()
-                .filter(e -> e.path().equals("SKILL.md"))
-                .findFirst()
-                .orElseThrow(() -> new DomainBadRequestException("error.skill.publish.skillMd.notFound"));
-
-        String skillMdContent = new String(skillMd.content());
-        SkillMetadata metadata = skillMetadataParser.parse(skillMdContent);
+        SkillMetadata metadata = parsePackageMetadata(entries);
+        ResourceType resourceType = webMetadataParser.parse(entries).isPresent() ? ResourceType.WEB : ResourceType.SKILL;
         Presentation presentation = resolvePresentation(entries, metadata);
         if (metadata.version() == null || metadata.version().isBlank()) {
             String autoVersion = AUTO_VERSION_FORMATTER.format(currentTime());
@@ -435,6 +421,7 @@ public class SkillPublishService {
                 .orElseGet(() -> {
                     Skill newSkill = new Skill(namespace.getId(), skillSlug, publisherId, visibility);
                     newSkill.setCreatedBy(publisherId);
+                    newSkill.setResourceType(resourceType);
                     try {
                         Skill savedSkill = skillRepository.save(newSkill);
                         // save() may defer the unique-constraint check until transaction commit.
@@ -451,6 +438,10 @@ public class SkillPublishService {
 
         if (skill.getStatus() == SkillStatus.ARCHIVED) {
             throw new DomainBadRequestException("error.skill.publish.archived", skillSlug);
+        }
+
+        if (skill.getResourceType() != resourceType) {
+            throw new DomainBadRequestException("error.resource.type.immutable");
         }
 
         // 6c. Auto-withdraw pending review versions
@@ -726,6 +717,12 @@ public class SkillPublishService {
         List<PackageEntry> entries = new ArrayList<>(files.size());
         for (SkillFile file : files) {
             byte[] content = readAllBytes(objectStorageService.getObject(file.getStorageKey()));
+            if ("README.md".equals(file.getFilePath())
+                    && skillRepository.findById(skillId).orElseThrow().getResourceType() == ResourceType.WEB) {
+                String readme = new String(content, StandardCharsets.UTF_8);
+                readme = webMetadataParser.rewriteVersion(readme, targetVersion);
+                content = readme.getBytes(StandardCharsets.UTF_8);
+            }
             if ("SKILL.md".equals(file.getFilePath())) {
                 content = rewriteSkillMdVersion(content, targetVersion);
             }
@@ -782,6 +779,14 @@ public class SkillPublishService {
         parsedMetadata.put("frontmatter", metadata.frontmatter());
         parsedMetadata.put(ComplianceMetadataService.SNAPSHOT_FIELD_NAME, complianceSnapshot);
         return parsedMetadata;
+    }
+
+    private SkillMetadata parsePackageMetadata(List<PackageEntry> entries) {
+        return webMetadataParser.parse(entries).orElseGet(() -> {
+            PackageEntry skillMd = entries.stream().filter(e -> "SKILL.md".equals(e.path())).findFirst()
+                    .orElseThrow(() -> new DomainBadRequestException("error.skill.publish.skillMd.notFound"));
+            return skillMetadataParser.parse(new String(skillMd.content(), StandardCharsets.UTF_8));
+        });
     }
 
     private Presentation resolvePresentation(List<PackageEntry> entries, SkillMetadata metadata) {

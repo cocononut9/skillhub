@@ -116,8 +116,42 @@ public class SkillQueryService {
             SkillLifecycleProjectionService.VersionProjection publishedVersion,
             SkillLifecycleProjectionService.VersionProjection ownerPreviewVersion,
             String ownerPreviewReviewComment,
-            String resolutionMode
-    ) {}
+            String resolutionMode,
+            String resourceType
+    ) {
+        public SkillDetailDTO(
+                Long id,
+                String slug,
+                String displayName,
+                String ownerId,
+                String ownerDisplayName,
+                String summary,
+                String visibility,
+                String status,
+                Long downloadCount,
+                Integer starCount,
+                Integer subscriptionCount,
+                java.math.BigDecimal ratingAvg,
+                Integer ratingCount,
+                boolean hidden,
+                Long namespaceId,
+                java.time.Instant createdAt,
+                java.time.Instant updatedAt,
+                boolean canManageLifecycle,
+                boolean canSubmitPromotion,
+                boolean canInteract,
+                boolean canReport,
+                SkillLifecycleProjectionService.VersionProjection headlineVersion,
+                SkillLifecycleProjectionService.VersionProjection publishedVersion,
+                SkillLifecycleProjectionService.VersionProjection ownerPreviewVersion,
+                String ownerPreviewReviewComment,
+                String resolutionMode) {
+            this(id, slug, displayName, ownerId, ownerDisplayName, summary, visibility, status, downloadCount,
+                    starCount, subscriptionCount, ratingAvg, ratingCount, hidden, namespaceId, createdAt,
+                    updatedAt, canManageLifecycle, canSubmitPromotion, canInteract, canReport, headlineVersion,
+                    publishedVersion, ownerPreviewVersion, ownerPreviewReviewComment, resolutionMode, "SKILL");
+        }
+    }
 
     public record SkillVersionDetailDTO(
             Long id,
@@ -249,7 +283,8 @@ public class SkillQueryService {
                 publishedVersion,
                 ownerPreviewVersion,
                 ownerPreviewReviewComment,
-                projection.resolutionMode().name()
+                projection.resolutionMode().name(),
+                skill.getResourceType().name()
         );
     }
 
@@ -319,6 +354,7 @@ public class SkillQueryService {
                 .collect(Collectors.toMap(SkillVersion::getId, Function.identity()));
 
         List<Skill> installableSkills = accessibleSkills.stream()
+                .filter(skill -> skill.getResourceType() != ResourceType.WEB)
                 .filter(skill -> SkillInstallability.isInstallableVersion(latestVersions.get(skill.getLatestVersionId())))
                 .sorted(Comparator.comparing(Skill::getSlug)
                         .thenComparing(Skill::getId, Comparator.nullsLast(Comparator.naturalOrder())))
@@ -601,6 +637,9 @@ public class SkillQueryService {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
         assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
+        if (skill.getResourceType() == ResourceType.WEB) {
+            throw new DomainBadRequestException("error.resource.web.notInstallable");
+        }
         SkillVersion resolved = resolveVersionEntity(skill, version, tag, hash);
         assertInstallableVersion(resolved, resolved.getVersion());
         String fingerprint = computeFingerprint(resolved);

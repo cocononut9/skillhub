@@ -1730,5 +1730,11 @@
     "unfreezeErrorTitle": "解冻命名空间失败",
     "archiveErrorTitle": "归档命名空间失败",
     "restoreErrorTitle": "恢复命名空间失败"
-  }
+  },
+  "webResource": {
+  "type": "网页工具",
+  "open": "打开工具",
+  "unavailable": "网页入口在版本发布后可用；已归档资源不可打开。",
+  "uploadHint": "支持 Skill 和网页资源 ZIP。网页包只需 README.md，开头填写中文标题和引用格式简介，并声明“资源类型：网页”“使用入口：https://你的网址”。"
+}
 }

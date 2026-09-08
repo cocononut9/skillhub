@@ -130,7 +130,7 @@ class ClawHubCompatAppServiceTest {
 
     @Test
     void listSkills_omitsLabelsByDefault() {
-        when(skillSearchAppService.search("", null, "newest", 0, 25, null, Map.of()))
+        when(skillSearchAppService.searchInstallableLatest("", null, "newest", 0, 25, null, Map.of()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(summary(7L)), 1, 0, 25));
 
         ClawHubSkillListResponse response = service.listSkills(0, 25, null, null, Map.of());
@@ -141,7 +141,7 @@ class ClawHubCompatAppServiceTest {
 
     @Test
     void listSkills_returnsLabelsWhenRequested() {
-        when(skillSearchAppService.search("", null, "newest", 0, 25, null, Map.of()))
+        when(skillSearchAppService.searchInstallableLatest("", null, "newest", 0, 25, null, Map.of()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(summary(7L)), 1, 0, 25));
         when(skillLabelProjectionService.labelsBySkillIds(List.of(7L)))
                 .thenReturn(Map.of(7L, List.of(new SkillLabelDto("automation", "RECOMMENDED", "Automation"))));

@@ -36,7 +36,7 @@ class ClawHubRegistryFacadeTest {
         );
 
         Instant updatedAt = Instant.parse("2026-03-18T09:00:00Z");
-        when(skillSearchAppService.search("agent", null, "relevance", 0, 20, null, Map.of()))
+        when(skillSearchAppService.searchInstallableLatest("agent", null, "relevance", 0, 20, null, Map.of()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(
                         List.of(new SkillSummaryResponse(
                                 1L,

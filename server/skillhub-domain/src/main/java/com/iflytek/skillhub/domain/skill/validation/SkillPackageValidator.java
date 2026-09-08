@@ -3,6 +3,7 @@ package com.iflytek.skillhub.domain.skill.validation;
 import com.iflytek.skillhub.domain.shared.exception.LocalizedDomainException;
 import com.iflytek.skillhub.domain.skill.metadata.ComplianceMetadataService;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadata;
+import com.iflytek.skillhub.domain.skill.metadata.WebResourceMetadataParser;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadataParser;
 
 import java.util.ArrayList;
@@ -102,17 +103,28 @@ public class SkillPackageValidator {
             }
         }
 
+        boolean webResource = false;
+        try {
+            webResource = new WebResourceMetadataParser()
+                    .parse(entries).isPresent();
+        } catch (LocalizedDomainException e) {
+            errors.add(formatMetadataError(e));
+        }
+
+        // Skill packages require SKILL.md; website packages use README.md.
         // 1. Check SKILL.md exists at root
-        if (skillMd == null) {
+        if (skillMd == null && !webResource) {
             errors.add("Missing required file: SKILL.md at root");
             return ValidationResult.of(errors, warnings);
         }
 
         // 2. Validate frontmatter
         try {
-            String content = new String(skillMd.content());
-            SkillMetadata metadata = metadataParser.parse(content);
-            errors.addAll(complianceMetadataService.validate(metadata.frontmatter(), entries));
+            if (!webResource) {
+                String content = new String(skillMd.content());
+                SkillMetadata metadata = metadataParser.parse(content);
+                errors.addAll(complianceMetadataService.validate(metadata.frontmatter(), entries));
+            }
         } catch (LocalizedDomainException e) {
             errors.add("Invalid SKILL.md frontmatter: " + formatMetadataError(e));
         }
@@ -145,6 +157,8 @@ public class SkillPackageValidator {
 
     private String formatMetadataError(LocalizedDomainException exception) {
         return switch (exception.messageCode()) {
+            case "error.resource.web.invalid" ->
+                    "Invalid website README: use 资源类型：网页 and 使用入口：https://example.com, without duplicate fields, URL credentials or SKILL.md";
             case "error.skill.metadata.requiredField.missing" ->
                     "missing required field \"" + exception.messageArgs()[0] + "\"";
             case "error.skill.metadata.frontmatter.missingStart" ->

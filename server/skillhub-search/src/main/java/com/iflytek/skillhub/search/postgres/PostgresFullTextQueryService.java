@@ -124,6 +124,7 @@ public class PostgresFullTextQueryService implements SearchQueryService {
         sql.append("AND s.status = 'ACTIVE' ");
         sql.append("AND s.hidden = FALSE ");
         if (query.requireInstallableLatest()) {
+            sql.append("AND s.resource_type = 'SKILL' ");
             sql.append("AND latest.status = 'PUBLISHED' ");
             sql.append("AND latest.download_ready = TRUE ");
             sql.append("AND latest.yanked_at IS NULL ");

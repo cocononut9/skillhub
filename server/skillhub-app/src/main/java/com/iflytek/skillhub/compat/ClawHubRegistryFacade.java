@@ -55,7 +55,7 @@ public class ClawHubRegistryFacade {
             String userId,
             Map<Long, NamespaceRole> userNsRoles) {
         int boundedLimit = clampLimit(limit);
-        List<SkillSummaryResponse> items = skillSearchAppService.search(
+        List<SkillSummaryResponse> items = skillSearchAppService.searchInstallableLatest(
                         keyword,
                         null,
                         "relevance",
@@ -65,7 +65,8 @@ public class ClawHubRegistryFacade {
                         normalizeRoles(userNsRoles))
                 .items();
 
-        List<ClawHubRegistrySearchItem> results = buildSearchResults(items);
+        List<ClawHubRegistrySearchItem> results = buildSearchResults(items.stream()
+                .filter(item -> !"WEB".equals(item.resourceType())).toList());
         return new ClawHubRegistrySearchResponse(results);
     }
 

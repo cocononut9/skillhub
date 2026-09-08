@@ -308,6 +308,9 @@ public class SkillDownloadService {
     }
 
     private void assertPublishedAccessible(Skill skill) {
+        if (skill.getResourceType() == com.iflytek.skillhub.domain.skill.ResourceType.WEB) {
+            throw new DomainBadRequestException("error.resource.web.notInstallable");
+        }
         if (skill.getStatus() != SkillStatus.ACTIVE) {
             throw new DomainBadRequestException("error.skill.status.notActive");
         }

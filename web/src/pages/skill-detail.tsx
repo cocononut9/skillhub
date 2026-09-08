@@ -9,6 +9,7 @@ import { FileTree } from '@/features/skill/file-tree'
 import { FilePreviewDialog } from '@/features/skill/file-preview-dialog'
 import type { FileTreeNode } from '@/features/skill/file-tree-builder'
 import type { SkillFile } from '@/api/types'
+import { getWebsiteUrl } from '@/features/skill/web-resource'
 import { InstallCommand } from '@/features/skill/install-command'
 import { ShareButton } from '@/features/skill/share-button'
 import { InstallForAgentButton } from '@/features/skill/install-for-agent-button'
@@ -168,6 +169,9 @@ export function SkillDetailPage() {
   const publishedVersion = skill ? getPublishedVersion(skill) : null
   const ownerPreviewVersion = skill ? getOwnerPreviewVersion(skill) : null
   const selectedVersion = headlineVersion?.version ?? versions?.[0]?.version
+  const isWebResource = skill?.resourceType === 'WEB'
+  const { data: webVersionDetail } = useSkillVersionDetail(qns, qslug, selectedVersion, skillReady && isWebResource)
+  const websiteUrl = getWebsiteUrl(webVersionDetail?.parsedMetadataJson)
   const selectedVersionEntry = versions?.find((version) => version.version === selectedVersion) ?? versions?.[0]
   const { data: files } = useSkillFiles(qns, qslug, selectedVersion, skillReady)
   const documentationPath = resolveDocumentationFilePath(files)
@@ -1185,7 +1189,7 @@ export function SkillDetailPage() {
           </div>
         </Card>
 
-        {publishedVersion && canInteract && (
+        {!isWebResource && publishedVersion && canInteract && (
           <Card className="p-5 space-y-4">
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-muted-foreground" />
@@ -1244,7 +1248,18 @@ export function SkillDetailPage() {
           </Card>
         )}
 
-        <Button
+        {isWebResource && (
+          <Card className="p-5 space-y-3">
+            <div className="flex items-center gap-2 font-semibold"><Globe className="h-4 w-4" />{t('webResource.type')}</div>
+            {websiteUrl && skill.status !== 'ARCHIVED' && selectedVersionEntry?.status === 'PUBLISHED' ? (
+              <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-primary-foreground">
+                {t('webResource.open')}
+              </a>
+            ) : <p className="text-sm text-muted-foreground">{t('webResource.unavailable')}</p>}
+          </Card>
+        )}
+
+        {!isWebResource && <Button
           className="w-full"
           variant="outline"
           size="lg"
@@ -1255,7 +1270,7 @@ export function SkillDetailPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
           </svg>
           {t('skillDetail.download')}
-        </Button>
+        </Button>}
 
         <ShareButton
           namespace={namespace}
@@ -1263,12 +1278,12 @@ export function SkillDetailPage() {
           description={skill.summary}
         />
 
-        <InstallForAgentButton
+        {!isWebResource && <InstallForAgentButton
           namespace={namespace}
           slug={slug}
           version={selectedVersionEntry?.version ?? publishedVersion?.version ?? ''}
           disabled={!selectedVersionEntry || skill.status === 'ARCHIVED' || !isVersionDownloadable}
-        />
+        />}
 
         {canManageSecurityScan && securityAuditVersion && (
           <SecurityAuditSummary

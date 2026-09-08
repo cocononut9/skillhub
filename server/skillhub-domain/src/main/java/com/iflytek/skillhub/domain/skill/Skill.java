@@ -25,6 +25,19 @@ public class Skill {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resource_type", nullable = false, length = 16)
+    private ResourceType resourceType = ResourceType.SKILL;
+
+    public ResourceType getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(ResourceType resourceType) {
+        this.resourceType = resourceType;
+    }
+
+
     @Column(name = "owner_id", nullable = false)
     private String ownerId;
 

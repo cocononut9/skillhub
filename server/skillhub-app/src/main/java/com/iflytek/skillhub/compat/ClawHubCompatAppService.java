@@ -85,7 +85,7 @@ public class ClawHubCompatAppService {
                                         int limit,
                                         String userId,
                                         Map<Long, NamespaceRole> userNsRoles) {
-        SkillSearchAppService.SearchResponse response = skillSearchAppService.search(
+        SkillSearchAppService.SearchResponse response = skillSearchAppService.searchInstallableLatest(
                 q,
                 null,
                 q == null || q.isBlank() ? "newest" : "relevance",
@@ -96,6 +96,7 @@ public class ClawHubCompatAppService {
         );
 
         List<ClawHubSearchResponse.ClawHubSearchResult> results = response.items().stream()
+                .filter(item -> !"WEB".equals(item.resourceType()))
                 .map(this::toSearchResult)
                 .toList();
 
@@ -211,7 +212,7 @@ public class ClawHubCompatAppService {
                                                String userId,
                                                Map<Long, NamespaceRole> userNsRoles) {
         String sortBy = sort != null ? sort : "newest";
-        SkillSearchAppService.SearchResponse response = skillSearchAppService.search(
+        SkillSearchAppService.SearchResponse response = skillSearchAppService.searchInstallableLatest(
                 "",
                 null,
                 sortBy,
@@ -227,6 +228,7 @@ public class ClawHubCompatAppService {
                 : Map.of();
 
         List<ClawHubSkillListResponse.SkillListItem> items = response.items().stream()
+                .filter(item -> !"WEB".equals(item.resourceType()))
                 .map(item -> toSkillListItem(
                         item,
                         includeLabels ? labelsBySkillId.getOrDefault(item.id(), List.of()) : null))
@@ -235,7 +237,7 @@ public class ClawHubCompatAppService {
         String nextCursor = null;
         long totalResults = response.total();
         long currentOffset = (long) page * limit;
-        if (currentOffset + items.size() < totalResults) {
+        if (currentOffset + response.items().size() < totalResults) {
             nextCursor = String.valueOf(page + 1);
         }
 

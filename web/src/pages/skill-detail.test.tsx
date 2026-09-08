@@ -19,6 +19,7 @@ const useSkillVersionsMock = vi.fn()
 const useSkillFilesMock = vi.fn()
 const useSkillReadmeMock = vi.fn()
 const useSkillFileMock = vi.fn()
+const useSkillVersionDetailMock = vi.fn()
 let authState: {
   user: { userId: string; platformRoles: string[] } | null
   hasRole: (role: string) => boolean
@@ -200,7 +201,7 @@ vi.mock('@/shared/hooks/use-skill-queries', () => ({
   useAttachSkillLabel: () => ({ mutate: vi.fn(), isPending: false }),
   useDetachSkillLabel: () => ({ mutate: vi.fn(), isPending: false }),
   useSkillVersions: (...args: unknown[]) => useSkillVersionsMock(...args),
-  useSkillVersionDetail: () => ({ data: undefined }),
+  useSkillVersionDetail: (...args: unknown[]) => useSkillVersionDetailMock(...args),
   useSkillFiles: (...args: unknown[]) => useSkillFilesMock(...args),
   useSkillReadme: (...args: unknown[]) => useSkillReadmeMock(...args),
   useSkillFile: (...args: unknown[]) => useSkillFileMock(...args),
@@ -277,6 +278,7 @@ describe('SkillDetailPage', () => {
     useSkillFilesMock.mockReset()
     useSkillReadmeMock.mockReset()
     useSkillFileMock.mockReset()
+    useSkillVersionDetailMock.mockReturnValue({ data: undefined })
     toastMocks.success.mockReset()
     toastMocks.error.mockReset()
     hasRoleMock.mockImplementation((role: string) => role === 'USER')
@@ -310,6 +312,25 @@ describe('SkillDetailPage', () => {
     useSkillFilesMock.mockReturnValue({ data: [] })
     useSkillReadmeMock.mockReturnValue({ data: '# Demo', error: null })
     useSkillFileMock.mockReturnValue({ data: null, isLoading: false, error: null })
+  })
+
+  it('opens a published website in a new tab and omits skill installation', () => {
+    useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'WEB' }), isLoading: false })
+    useSkillVersionDetailMock.mockReturnValue({ data: { parsedMetadataJson: JSON.stringify({ frontmatter: { resourceType: 'WEB', websiteUrl: 'https://example.com/tool' } }) } })
+    render(<SkillDetailPage />)
+    const link = screen.getByRole('link', { name: 'webResource.open' })
+    expect(link.getAttribute('href')).toBe('https://example.com/tool')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(screen.queryByText('skillDetail.install')).toBeNull()
+    expect(screen.queryByText('skillDetail.download')).toBeNull()
+  })
+
+  it('does not offer an archived website link', () => {
+    useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'WEB', status: 'ARCHIVED' }), isLoading: false })
+    useSkillVersionDetailMock.mockReturnValue({ data: { parsedMetadataJson: JSON.stringify({ frontmatter: { resourceType: 'WEB', websiteUrl: 'https://example.com/tool' } }) } })
+    render(<SkillDetailPage />)
+    expect(screen.queryByRole('link', { name: 'webResource.open' })).toBeNull()
   })
 
   it('shows hard delete action for the skill owner', () => {

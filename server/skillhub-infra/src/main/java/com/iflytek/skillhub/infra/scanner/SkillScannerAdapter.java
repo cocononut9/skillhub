@@ -33,12 +33,12 @@ public class SkillScannerAdapter implements SecurityScanner {
     @Override
     public SecurityScanResponse scan(SecurityScanRequest request) {
         log.info("Starting security scan for versionId={}, mode={}", request.skillVersionId(), scanMode);
-        try {
+        try (var scanPackage = WebResourceScanPackage.prepare(Path.of(request.skillPackagePath()))) {
             SkillScannerApiResponse apiResponse = MODE_LOCAL.equalsIgnoreCase(scanMode)
-                    ? skillScannerService.scanDirectory(request.skillPackagePath(), scanOptions)
-                    : skillScannerService.scanUpload(Path.of(request.skillPackagePath()), scanOptions);
+                    ? skillScannerService.scanDirectory(scanPackage.path().toString(), scanOptions)
+                    : skillScannerService.scanUpload(scanPackage.path(), scanOptions);
             return mapToResponse(apiResponse);
-        } catch (HttpClientException e) {
+        } catch (HttpClientException | java.io.IOException e) {
             log.error("Security scan failed for versionId={}: {}", request.skillVersionId(), e.getMessage());
             throw new SecurityScanException("Security scan request failed: " + e.getMessage(), e);
         }

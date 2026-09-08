@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { SkillSummary } from '@/api/types'
 import { useAuth } from '@/features/auth/use-auth'
 import { useStarredIdSet } from '@/features/social/use-star'
@@ -36,6 +37,7 @@ function formatRelativeTime(dateString: string): string {
  * Reusable card for displaying one skill in lists such as landing, namespace, search, and stars.
  */
 export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCardProps) {
+  const { t } = useTranslation()
   const { isAuthenticated } = useAuth()
   // Batch highlight via shared ['skills','stars'] — never N× useStar per grid row.
   const { starredIds } = useStarredIdSet(highlightStarred && isAuthenticated)
@@ -70,6 +72,7 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
             </h3>
           </div>
           <div className="flex items-center gap-2">
+            {skill.resourceType === 'WEB' && <span className="rounded-full bg-secondary px-2 py-1 text-xs">{t('webResource.type')}</span>}
             <NamespaceBadge type="TEAM" name={`@${skill.namespace}`} />
           </div>
         </div>

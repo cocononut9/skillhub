@@ -50,7 +50,8 @@ public class CompatSkillLookupService {
     }
 
     public CompatSkillContext findByLegacySlug(String slug) {
-        List<Skill> skills = skillRepository.findBySlug(slug);
+        List<Skill> skills = skillRepository.findBySlug(slug).stream()
+                .filter(s -> s.getResourceType() != com.iflytek.skillhub.domain.skill.ResourceType.WEB).toList();
         if (skills.isEmpty()) {
             throw new DomainNotFoundException("error.skill.notFound", slug);
         }
@@ -75,7 +76,7 @@ public class CompatSkillLookupService {
     }
 
     public boolean canAccess(Skill skill, String currentUserId, Map<Long, NamespaceRole> userNsRoles) {
-        if (skill == null) {
+        if (skill == null || skill.getResourceType() == com.iflytek.skillhub.domain.skill.ResourceType.WEB) {
             return false;
         }
         Map<Long, NamespaceRole> roles = userNsRoles != null ? userNsRoles : Map.of();

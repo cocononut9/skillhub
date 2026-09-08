@@ -196,6 +196,7 @@ export interface BatchMemberResponse {
 
 // Skill types
 export interface SkillSummary {
+  resourceType?: components['schemas']['SkillSummaryResponse']['resourceType']
   id: number
   slug: string
   displayName: string
@@ -276,6 +277,7 @@ export interface ComplianceSnapshot {
 }
 
 export interface SkillDetail {
+  resourceType?: components['schemas']['SkillDetailResponse']['resourceType']
   id: number
   slug: string
   displayName: string

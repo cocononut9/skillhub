@@ -429,6 +429,7 @@ class PostgresFullTextQueryServiceTest {
         ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
         verify(entityManager, org.mockito.Mockito.times(2)).createNativeQuery(sqlCaptor.capture());
         assertThat(sqlCaptor.getAllValues().getFirst())
+                .contains("s.resource_type = 'SKILL'")
                 .contains("JOIN skill_version latest ON latest.id = s.latest_version_id")
                 .contains("AND latest.status = 'PUBLISHED'")
                 .contains("AND latest.download_ready = TRUE")
