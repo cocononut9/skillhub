@@ -73,6 +73,7 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
           </div>
           <div className="flex items-center gap-2">
             {skill.resourceType === 'WEB' && <span className="rounded-full bg-secondary px-2 py-1 text-xs">{t('webResource.type')}</span>}
+            {skill.resourceType === 'PLUGIN' && <span className="rounded-full bg-secondary px-2 py-1 text-xs">{t('pluginResource.type')}</span>}
             <NamespaceBadge type="TEAM" name={`@${skill.namespace}`} />
           </div>
         </div>

@@ -354,7 +354,7 @@ public class SkillQueryService {
                 .collect(Collectors.toMap(SkillVersion::getId, Function.identity()));
 
         List<Skill> installableSkills = accessibleSkills.stream()
-                .filter(skill -> skill.getResourceType() != ResourceType.WEB)
+                .filter(skill -> skill.getResourceType() == ResourceType.SKILL)
                 .filter(skill -> SkillInstallability.isInstallableVersion(latestVersions.get(skill.getLatestVersionId())))
                 .sorted(Comparator.comparing(Skill::getSlug)
                         .thenComparing(Skill::getId, Comparator.nullsLast(Comparator.naturalOrder())))
@@ -637,8 +637,9 @@ public class SkillQueryService {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
         assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
-        if (skill.getResourceType() == ResourceType.WEB) {
-            throw new DomainBadRequestException("error.resource.web.notInstallable");
+        if (skill.getResourceType() != ResourceType.SKILL) {
+            throw new DomainBadRequestException(skill.getResourceType() == ResourceType.WEB
+                    ? "error.resource.web.notInstallable" : "error.resource.plugin.notInstallable");
         }
         SkillVersion resolved = resolveVersionEntity(skill, version, tag, hash);
         assertInstallableVersion(resolved, resolved.getVersion());

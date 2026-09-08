@@ -1736,6 +1736,10 @@
   "type": "Website",
   "open": "Open tool",
   "unavailable": "The website link is available after publication and while the resource is active.",
-  "uploadHint": "Upload a skill or website ZIP. Website packages need only README.md with a title, quoted summary, 资源类型：网页 and 使用入口：https://your-site.example."
+  "uploadHint": "Upload Skill, website or plugin ZIPs. Website README: 资源类型：网页 and 使用入口：https://your-url. Plugin ZIP: README.md plus the real installer; declare 资源类型：插件 and 安装包：filename in README. Total package limit: 100MB."
+},
+  "pluginResource": {
+  "type": "Plugin",
+  "download": "Download installer"
 }
 }

@@ -170,6 +170,8 @@ export function SkillDetailPage() {
   const ownerPreviewVersion = skill ? getOwnerPreviewVersion(skill) : null
   const selectedVersion = headlineVersion?.version ?? versions?.[0]?.version
   const isWebResource = skill?.resourceType === 'WEB'
+  const isPluginResource = skill?.resourceType === 'PLUGIN'
+  const isSkillResource = !isWebResource && !isPluginResource
   const { data: webVersionDetail } = useSkillVersionDetail(qns, qslug, selectedVersion, skillReady && isWebResource)
   const websiteUrl = getWebsiteUrl(webVersionDetail?.parsedMetadataJson)
   const selectedVersionEntry = versions?.find((version) => version.version === selectedVersion) ?? versions?.[0]
@@ -1189,7 +1191,7 @@ export function SkillDetailPage() {
           </div>
         </Card>
 
-        {!isWebResource && publishedVersion && canInteract && (
+        {isSkillResource && publishedVersion && canInteract && (
           <Card className="p-5 space-y-4">
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-muted-foreground" />
@@ -1269,7 +1271,7 @@ export function SkillDetailPage() {
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
           </svg>
-          {t('skillDetail.download')}
+          {t(isPluginResource ? 'pluginResource.download' : 'skillDetail.download')}
         </Button>}
 
         <ShareButton
@@ -1278,7 +1280,7 @@ export function SkillDetailPage() {
           description={skill.summary}
         />
 
-        {!isWebResource && <InstallForAgentButton
+        {isSkillResource && <InstallForAgentButton
           namespace={namespace}
           slug={slug}
           version={selectedVersionEntry?.version ?? publishedVersion?.version ?? ''}

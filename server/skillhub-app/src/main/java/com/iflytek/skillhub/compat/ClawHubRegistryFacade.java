@@ -66,7 +66,7 @@ public class ClawHubRegistryFacade {
                 .items();
 
         List<ClawHubRegistrySearchItem> results = buildSearchResults(items.stream()
-                .filter(item -> !"WEB".equals(item.resourceType())).toList());
+                .filter(item -> "SKILL".equals(item.resourceType())).toList());
         return new ClawHubRegistrySearchResponse(results);
     }
 

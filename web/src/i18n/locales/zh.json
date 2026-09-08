@@ -1735,6 +1735,10 @@
   "type": "网页工具",
   "open": "打开工具",
   "unavailable": "网页入口在版本发布后可用；已归档资源不可打开。",
-  "uploadHint": "支持 Skill 和网页资源 ZIP。网页包只需 README.md，开头填写中文标题和引用格式简介，并声明“资源类型：网页”“使用入口：https://你的网址”。"
+  "uploadHint": "支持 Skill、网页和插件资源 ZIP。网页 README 声明“资源类型：网页”“使用入口：https://你的网址”。插件 ZIP 根目录放 README.md 和真实安装包，README 声明“资源类型：插件”“安装包：实际文件名”。整个上传包最多 100MB。"
+},
+  "pluginResource": {
+  "type": "插件",
+  "download": "下载安装包"
 }
 }

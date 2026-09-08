@@ -314,6 +314,13 @@ describe('SkillDetailPage', () => {
     useSkillFileMock.mockReturnValue({ data: null, isLoading: false, error: null })
   })
 
+  it('offers a plugin installer without Skill installation controls', () => {
+    useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'PLUGIN' }), isLoading: false })
+    render(<SkillDetailPage />)
+    expect(screen.getByRole('button', { name: 'pluginResource.download' })).toBeTruthy()
+    expect(screen.queryByText('skillDetail.install')).toBeNull()
+  })
+
   it('opens a published website in a new tab and omits skill installation', () => {
     useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'WEB' }), isLoading: false })
     useSkillVersionDetailMock.mockReturnValue({ data: { parsedMetadataJson: JSON.stringify({ frontmatter: { resourceType: 'WEB', websiteUrl: 'https://example.com/tool' } }) } })

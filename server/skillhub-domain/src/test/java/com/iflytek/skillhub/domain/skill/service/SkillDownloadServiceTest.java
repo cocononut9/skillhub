@@ -602,6 +602,35 @@ class SkillDownloadServiceTest {
         verify(eventPublisher, never()).publishEvent(any(SkillDownloadedEvent.class));
     }
 
+    @Test
+    void pluginDownloadReturnsExactInstallerWithOriginalFilename() throws Exception {
+        Namespace namespace = new Namespace("test-ns", "Test", "owner");
+        setId(namespace, 1L);
+        Skill skill = new Skill(1L, "plugin", "owner", SkillVisibility.PUBLIC);
+        setId(skill, 1L);
+        skill.setResourceType(ResourceType.PLUGIN);
+        skill.setLatestVersionId(10L);
+        SkillVersion version = new SkillVersion(1L, "1.0.0", "owner");
+        setId(version, 10L);
+        version.setStatus(SkillVersionStatus.PUBLISHED);
+        version.setDownloadReady(true);
+        version.setParsedMetadataJson("{\"frontmatter\":{\"installerFile\":\"demo.vsix\"}}");
+        byte[] original = new byte[]{80,75,3,4,0,1,2};
+        String key = "packages/1/10/demo.vsix";
+        when(namespaceRepository.findBySlug("test-ns")).thenReturn(Optional.of(namespace));
+        when(skillRepository.findByNamespaceIdAndSlug(1L, "plugin")).thenReturn(List.of(skill));
+        when(visibilityChecker.canAccess(eq(skill), eq("owner"), anyMap())).thenReturn(true);
+        when(skillVersionRepository.findById(10L)).thenReturn(Optional.of(version));
+        when(skillFileRepository.findByVersionId(10L)).thenReturn(List.of(new SkillFile(10L, "demo.vsix", (long) original.length, "application/octet-stream", "hash", key)));
+        when(objectStorageService.exists(key)).thenReturn(true);
+        when(objectStorageService.getObject(key)).thenReturn(new ByteArrayInputStream(original));
+        var result = service.downloadLatest("test-ns", "plugin", "owner", Map.of(1L, NamespaceRole.MEMBER));
+        assertEquals("demo.vsix", result.filename());
+        assertEquals(original.length, result.contentLength());
+        assertArrayEquals(original, result.openContent().readAllBytes());
+        verify(objectStorageService, never()).getObject("packages/1/10/bundle.zip");
+    }
+
     private void setId(Object entity, Long id) throws Exception {
         Field idField = entity.getClass().getDeclaredField("id");
         idField.setAccessible(true);

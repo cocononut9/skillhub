@@ -168,13 +168,33 @@ public class SkillDownloadService {
                                            Map<Long, NamespaceRole> userNsRoles) {
         assertPublishedAccessible(skill);
         assertDownloadableVersion(skill, version, currentUserId, userNsRoles);
-        DownloadResult result = buildDownloadResult(skill, version);
+        DownloadResult result = skill.getResourceType() == ResourceType.PLUGIN
+                ? buildPluginInstallerResult(version) : buildDownloadResult(skill, version);
 
         // Only increment download count for PUBLISHED versions
         if (version.getStatus() == SkillVersionStatus.PUBLISHED) {
             recordPublishedDownload(skill, version);
         }
         return result;
+    }
+
+    private DownloadResult buildPluginInstallerResult(SkillVersion version) {
+        String installer;
+        try {
+            installer = new com.fasterxml.jackson.databind.ObjectMapper().readTree(version.getParsedMetadataJson())
+                    .path("frontmatter").path("installerFile").asText();
+        } catch (java.io.IOException | IllegalArgumentException e) {
+            throw new DomainBadRequestException("error.resource.plugin.invalid");
+        }
+        SkillFile file = skillFileRepository.findByVersionId(version.getId()).stream()
+                .filter(f -> f.getFilePath().equals(installer)).findFirst()
+                .orElseThrow(() -> new DomainBadRequestException("error.resource.plugin.installerMissing"));
+        if (!objectStorageService.exists(file.getStorageKey())) {
+            throw new DomainBadRequestException("error.resource.plugin.installerMissing");
+        }
+        return new DownloadResult(() -> objectStorageService.getObject(file.getStorageKey()),
+                installer, file.getFileSize(), "application/octet-stream",
+                objectStorageService.generatePresignedUrl(file.getStorageKey(), Duration.ofMinutes(10), installer), false);
     }
 
     private void recordPublishedDownload(Skill skill, SkillVersion version) {

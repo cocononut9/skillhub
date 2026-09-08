@@ -75,6 +75,14 @@ public class SkillPackageValidator {
         List<String> warnings = new ArrayList<>();
         Set<String> normalizedPaths = new HashSet<>();
         PackageEntry skillMd = null;
+        String installerFile = null;
+        try {
+            var plugin = new com.iflytek.skillhub.domain.skill.metadata.PluginResourceMetadataParser().parse(entries);
+            if (plugin.isPresent()) installerFile = (String) plugin.get().frontmatter().get("installerFile");
+        } catch (LocalizedDomainException e) {
+            errors.add(formatMetadataError(e));
+            return ValidationResult.of(errors, warnings);
+        }
 
         for (PackageEntry entry : entries) {
             String normalizedPath;
@@ -89,11 +97,12 @@ public class SkillPackageValidator {
                 errors.add("Duplicate package entry path: " + normalizedPath);
             }
 
-            if (!hasAllowedExtension(normalizedPath)) {
+            if (!normalizedPath.equals(installerFile) && !hasAllowedExtension(normalizedPath)) {
                 warnings.add("Disallowed file extension: " + normalizedPath);
             }
 
-            String contentMismatch = SkillPackagePolicy.validateContentMatchesExtension(normalizedPath, entry.content());
+            String contentMismatch = normalizedPath.equals(installerFile) ? null
+                    : SkillPackagePolicy.validateContentMatchesExtension(normalizedPath, entry.content());
             if (contentMismatch != null) {
                 warnings.add(contentMismatch);
             }
@@ -103,9 +112,9 @@ public class SkillPackageValidator {
             }
         }
 
-        boolean webResource = false;
+        boolean webResource = installerFile != null;
         try {
-            webResource = new WebResourceMetadataParser()
+            webResource = webResource || new WebResourceMetadataParser()
                     .parse(entries).isPresent();
         } catch (LocalizedDomainException e) {
             errors.add(formatMetadataError(e));
@@ -136,8 +145,9 @@ public class SkillPackageValidator {
 
         // 4. Check single file size
         for (PackageEntry entry : entries) {
-            if (entry.size() > maxSingleFileSize) {
-                errors.add("File too large: " + entry.path() + " (" + entry.size() + " bytes, max: " + maxSingleFileSize + ")");
+            long fileLimit = entry.path().equals(installerFile) ? maxTotalPackageSize : maxSingleFileSize;
+            if (entry.size() > fileLimit) {
+                errors.add("File too large: " + entry.path() + " (" + entry.size() + " bytes, max: " + fileLimit + ")");
             }
         }
 
@@ -157,6 +167,8 @@ public class SkillPackageValidator {
 
     private String formatMetadataError(LocalizedDomainException exception) {
         return switch (exception.messageCode()) {
+            case "error.resource.plugin.invalid" ->
+                    "插件 ZIP 必须只包含根目录 README.md 和非空安装包；README 在第一个二级标题前填写资源类型：插件、安装包：实际文件名（支持 zip/crx/xpi/vsix/exe/msi/dmg/pkg/tgz/tar.gz），字段不能重复";
             case "error.resource.web.invalid" ->
                     "Invalid website README: use 资源类型：网页 and 使用入口：https://example.com, without duplicate fields, URL credentials or SKILL.md";
             case "error.skill.metadata.requiredField.missing" ->
