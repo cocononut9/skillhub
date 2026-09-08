@@ -562,7 +562,7 @@ public class SkillPublishService {
         version.setFileCount(skillFiles.size());
         version.setTotalSize(totalSize);
         version.setBundleReady(true);
-        version.setDownloadReady(!skillFiles.isEmpty());
+        version.setDownloadReady(resourceType != ResourceType.PLUGIN && !skillFiles.isEmpty());
         skillVersionRepository.save(version);
 
         // Create review task for PUBLIC/NAMESPACE_ONLY (not PRIVATE)

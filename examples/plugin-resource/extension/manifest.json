@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "SkillHub 插件演示",
+  "version": "1.0.0",
+  "description": "点击扩展图标显示演示页面。",
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

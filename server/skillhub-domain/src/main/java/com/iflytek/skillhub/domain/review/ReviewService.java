@@ -197,6 +197,12 @@ public class ReviewService {
             throw new DomainBadRequestException("review.approve.scan_in_progress", reviewTaskId);
         }
 
+        Skill skill = skillRepository.findById(skillVersion.getSkillId())
+                .orElseThrow(() -> new DomainNotFoundException("skill.not_found", skillVersion.getSkillId()));
+        if (skill.getResourceType() == com.iflytek.skillhub.domain.skill.ResourceType.PLUGIN && !skillVersion.isDownloadReady()) {
+            throw new DomainBadRequestException("error.resource.plugin.scanRequired");
+        }
+
         int updated = reviewTaskRepository.updateStatusWithVersion(
                 reviewTaskId, ReviewTaskStatus.APPROVED, reviewerId, comment, task.getVersion());
         if (updated == 0) {
@@ -204,9 +210,6 @@ public class ReviewService {
         }
         syncReviewTaskState(task, ReviewTaskStatus.APPROVED, reviewerId, comment);
         entityManager.detach(task);
-
-        Skill skill = skillRepository.findById(skillVersion.getSkillId())
-                .orElseThrow(() -> new DomainNotFoundException("skill.not_found", skillVersion.getSkillId()));
 
         // Check no other owner has a published skill with the same slug
         List<Skill> sameSlugSkills = skillRepository.findByNamespaceIdAndSlug(skill.getNamespaceId(), skill.getSlug());

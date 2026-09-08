@@ -773,6 +773,12 @@ public class SkillQueryService {
     }
 
     private SkillFile findFile(SkillVersion skillVersion, String filePath) {
+        if (!"README.md".equals(filePath) && !skillVersion.isDownloadReady()) {
+            Skill skill = skillRepository.findById(skillVersion.getSkillId()).orElse(null);
+            if (skill != null && skill.getResourceType() == ResourceType.PLUGIN) {
+                throw new DomainBadRequestException("error.resource.plugin.scanRequired");
+            }
+        }
         return availableFiles(skillVersion.getId()).stream()
                 .filter(f -> f.getFilePath().equals(filePath))
                 .findFirst()

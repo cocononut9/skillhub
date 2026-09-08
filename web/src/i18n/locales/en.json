@@ -1736,10 +1736,11 @@
   "type": "Website",
   "open": "Open tool",
   "unavailable": "The website link is available after publication and while the resource is active.",
-  "uploadHint": "Upload Skill, website or plugin ZIPs. Website README: 资源类型：网页 and 使用入口：https://your-url. Plugin ZIP: README.md plus the real installer; declare 资源类型：插件 and 安装包：filename in README. Total package limit: 100MB."
+  "uploadHint": "Upload Skill, website or plugin ZIPs. Website README: 资源类型：网页 and 使用入口：https://your-url. Plugin ZIP: README.md plus the real installer; declare 资源类型：插件 and 安装包：filename in README. Total package limit: 100MB. Plugin installers: ZIP, CRX, XPI and VSIX; installer contents must pass scanning."
 },
   "pluginResource": {
   "type": "Plugin",
-  "download": "Download installer"
+  "download": "Download installer",
+  "scanScope": "Installer scripts, configuration and documentation must pass static scanning before download. Images receive format checks only. Plugins containing binary programs are unsupported."
 }
 }

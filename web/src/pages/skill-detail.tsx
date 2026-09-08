@@ -1261,6 +1261,7 @@ export function SkillDetailPage() {
           </Card>
         )}
 
+        {isPluginResource && <p className="text-sm text-muted-foreground">{t('pluginResource.scanScope')}</p>}
         {!isWebResource && <Button
           className="w-full"
           variant="outline"

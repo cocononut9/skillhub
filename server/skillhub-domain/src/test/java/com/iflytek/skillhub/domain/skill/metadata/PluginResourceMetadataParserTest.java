@@ -20,7 +20,7 @@ class PluginResourceMetadataParserTest {
         return new PackageEntry("README.md", bytes, bytes.length, "text/markdown");
     }
     @ParameterizedTest
-    @ValueSource(strings = {"demo.zip", "demo.crx", "demo.xpi", "demo.vsix", "demo.exe", "demo.msi", "demo.dmg", "demo.pkg", "demo.tgz", "demo.tar.gz"})
+    @ValueSource(strings = {"demo.zip", "demo.crx", "demo.xpi", "demo.vsix"})
     void acceptsOpaqueInstallerAndPreservesItsName(String file) {
         var entries = List.of(doc(file), new PackageEntry(file, new byte[]{0,1,2}, 3, "application/octet-stream"));
         assertEquals(file, parser.parse(entries).orElseThrow().frontmatter().get("installerFile"));
@@ -29,7 +29,7 @@ class PluginResourceMetadataParserTest {
         assertTrue(result.warnings().isEmpty(), result.warnings().toString());
     }
     @ParameterizedTest
-    @ValueSource(strings = {"../demo.zip", "/demo.zip", "folder/demo.zip", "https://example.com/demo.zip", "SKILL.md", "demo.html", ""})
+    @ValueSource(strings = {"../demo.zip", "/demo.zip", "folder/demo.zip", "https://example.com/demo.zip", "SKILL.md", "demo.html", "demo.exe", "demo.dmg", "demo.tgz", ""})
     void rejectsInvalidInstallerReference(String file) {
         assertThrows(DomainBadRequestException.class, () -> parser.parseReadme(readme(file)));
     }

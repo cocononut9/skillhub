@@ -628,6 +628,8 @@ class SkillDownloadServiceTest {
         assertEquals("demo.vsix", result.filename());
         assertEquals(original.length, result.contentLength());
         assertArrayEquals(original, result.openContent().readAllBytes());
+        version.setDownloadReady(false);
+        assertThrows(DomainBadRequestException.class, () -> service.downloadLatest("test-ns", "plugin", "owner", Map.of(1L, NamespaceRole.MEMBER)));
         verify(objectStorageService, never()).getObject("packages/1/10/bundle.zip");
     }
 

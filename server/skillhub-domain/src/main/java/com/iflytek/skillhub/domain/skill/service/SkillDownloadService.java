@@ -167,6 +167,9 @@ public class SkillDownloadService {
                                            String currentUserId,
                                            Map<Long, NamespaceRole> userNsRoles) {
         assertPublishedAccessible(skill);
+        if (skill.getResourceType() == ResourceType.PLUGIN && !version.isDownloadReady()) {
+            throw new DomainBadRequestException("error.resource.plugin.scanRequired");
+        }
         assertDownloadableVersion(skill, version, currentUserId, userNsRoles);
         DownloadResult result = skill.getResourceType() == ResourceType.PLUGIN
                 ? buildPluginInstallerResult(version) : buildDownloadResult(skill, version);

@@ -14,7 +14,7 @@ import java.util.Set;
 
 /** Plugin installers are opaque files: validate the envelope, never unpack the installer. */
 public class PluginResourceMetadataParser {
-    private static final Set<String> EXTENSIONS = Set.of(".zip", ".crx", ".xpi", ".vsix", ".exe", ".msi", ".dmg", ".pkg", ".tgz", ".tar.gz");
+    private static final Set<String> EXTENSIONS = Set.of(".zip", ".crx", ".xpi", ".vsix");
 
     public Optional<SkillMetadata> parse(List<PackageEntry> entries) {
         var readme = entries.stream().filter(e -> "README.md".equals(e.path())).findFirst();

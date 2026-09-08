@@ -168,7 +168,7 @@ public class SkillPackageValidator {
     private String formatMetadataError(LocalizedDomainException exception) {
         return switch (exception.messageCode()) {
             case "error.resource.plugin.invalid" ->
-                    "插件 ZIP 必须只包含根目录 README.md 和非空安装包；README 在第一个二级标题前填写资源类型：插件、安装包：实际文件名（支持 zip/crx/xpi/vsix/exe/msi/dmg/pkg/tgz/tar.gz），字段不能重复";
+                    "插件 ZIP 必须只包含根目录 README.md 和非空安装包；README 在第一个二级标题前填写资源类型：插件、安装包：实际文件名（支持 zip/crx/xpi/vsix；暂不支持无法静态扫描的二进制安装器），字段不能重复";
             case "error.resource.web.invalid" ->
                     "Invalid website README: use 资源类型：网页 and 使用入口：https://example.com, without duplicate fields, URL credentials or SKILL.md";
             case "error.skill.metadata.requiredField.missing" ->
