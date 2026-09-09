@@ -10,6 +10,7 @@ import { FilePreviewDialog } from '@/features/skill/file-preview-dialog'
 import type { FileTreeNode } from '@/features/skill/file-tree-builder'
 import type { SkillFile } from '@/api/types'
 import { getWebsiteUrl } from '@/features/skill/web-resource'
+import { PromptResourceContent } from '@/features/skill/prompt-resource-content'
 import { InstallCommand } from '@/features/skill/install-command'
 import { ShareButton } from '@/features/skill/share-button'
 import { InstallForAgentButton } from '@/features/skill/install-for-agent-button'
@@ -171,7 +172,8 @@ export function SkillDetailPage() {
   const selectedVersion = headlineVersion?.version ?? versions?.[0]?.version
   const isWebResource = skill?.resourceType === 'WEB'
   const isPluginResource = skill?.resourceType === 'PLUGIN'
-  const isSkillResource = !isWebResource && !isPluginResource
+  const isPromptResource = skill?.resourceType === 'PROMPT'
+  const isSkillResource = !isWebResource && !isPluginResource && !isPromptResource
   const { data: webVersionDetail } = useSkillVersionDetail(qns, qslug, selectedVersion, skillReady && isWebResource)
   const websiteUrl = getWebsiteUrl(webVersionDetail?.parsedMetadataJson)
   const selectedVersionEntry = versions?.find((version) => version.version === selectedVersion) ?? versions?.[0]
@@ -914,6 +916,13 @@ export function SkillDetailPage() {
           </TabsList>
 
           <TabsContent value="readme" className="mt-6">
+            {isPromptResource && <PromptResourceContent
+              key={selectedVersion}
+              namespace={qns}
+              slug={qslug}
+              version={selectedVersion}
+              enabled={skillReady && isVersionDownloadable && skill.status !== 'ARCHIVED'}
+            />}
             {readme ? (
               <Card className="p-8 space-y-4">
                 {documentationPath ? (
@@ -1272,7 +1281,7 @@ export function SkillDetailPage() {
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
           </svg>
-          {t(isPluginResource ? 'pluginResource.download' : 'skillDetail.download')}
+          {t(isPromptResource ? 'promptResource.download' : isPluginResource ? 'pluginResource.download' : 'skillDetail.download')}
         </Button>}
 
         <ShareButton

@@ -23,6 +23,7 @@ import com.iflytek.skillhub.domain.skill.metadata.ReadmePresentationParser.Prese
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadata;
 import com.iflytek.skillhub.domain.skill.metadata.WebResourceMetadataParser;
 import com.iflytek.skillhub.domain.skill.metadata.PluginResourceMetadataParser;
+import com.iflytek.skillhub.domain.skill.metadata.PromptResourceMetadataParser;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadataParser;
 import com.iflytek.skillhub.domain.skill.validation.PackageEntry;
 import com.iflytek.skillhub.domain.skill.validation.PrePublishValidator;
@@ -208,6 +209,10 @@ public class SkillPublishService {
             return new DryRunResult(false, errors, warnings, null, null);
         }
 
+        if (visibility == SkillVisibility.PRIVATE
+                && new PromptResourceMetadataParser().parse(entries).isPresent() && !securityScanService.isEnabled()) {
+            errors.add("error.security.scanner.required");
+        }
         try {
             resolvePresentation(entries, metadata);
         } catch (DomainBadRequestException e) {
@@ -368,7 +373,8 @@ public class SkillPublishService {
         }
 
         SkillMetadata metadata = parsePackageMetadata(entries);
-        ResourceType resourceType = new PluginResourceMetadataParser().parse(entries).isPresent() ? ResourceType.PLUGIN
+        ResourceType resourceType = new PromptResourceMetadataParser().parse(entries).isPresent() ? ResourceType.PROMPT
+                : new PluginResourceMetadataParser().parse(entries).isPresent() ? ResourceType.PLUGIN
                 : webMetadataParser.parse(entries).isPresent() ? ResourceType.WEB : ResourceType.SKILL;
         Presentation presentation = resolvePresentation(entries, metadata);
         if (metadata.version() == null || metadata.version().isBlank()) {
@@ -393,7 +399,7 @@ public class SkillPublishService {
                     "error.skill.publish.precheck.confirmRequired",
                     formatValidationMessages(publishWarnings));
         }
-        if (requiresSecurityScanner(visibility) && !securityScanService.isEnabled()) {
+        if ((requiresSecurityScanner(visibility) || resourceType.requiresContentScan()) && !securityScanService.isEnabled()) {
             throw new DomainBadRequestException("error.security.scanner.required");
         }
 
@@ -562,7 +568,7 @@ public class SkillPublishService {
         version.setFileCount(skillFiles.size());
         version.setTotalSize(totalSize);
         version.setBundleReady(true);
-        version.setDownloadReady(resourceType != ResourceType.PLUGIN && !skillFiles.isEmpty());
+        version.setDownloadReady(!resourceType.requiresContentScan() && !skillFiles.isEmpty());
         skillVersionRepository.save(version);
 
         // Create review task for PUBLIC/NAMESPACE_ONLY (not PRIVATE)
@@ -784,7 +790,8 @@ public class SkillPublishService {
     }
 
     private SkillMetadata parsePackageMetadata(List<PackageEntry> entries) {
-        return new PluginResourceMetadataParser().parse(entries).or(() -> webMetadataParser.parse(entries)).orElseGet(() -> {
+        return new PromptResourceMetadataParser().parse(entries).or(() -> new PluginResourceMetadataParser().parse(entries))
+                .or(() -> webMetadataParser.parse(entries)).orElseGet(() -> {
             PackageEntry skillMd = entries.stream().filter(e -> "SKILL.md".equals(e.path())).findFirst()
                     .orElseThrow(() -> new DomainBadRequestException("error.skill.publish.skillMd.notFound"));
             return skillMetadataParser.parse(new String(skillMd.content(), StandardCharsets.UTF_8));

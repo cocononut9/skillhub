@@ -27,7 +27,7 @@ public class WebResourceMetadataParser {
             }
         }
         String type = fields.get("资源类型");
-        if (type == null || "Skill".equalsIgnoreCase(type) || "插件".equals(type) || "PLUGIN".equalsIgnoreCase(type)) return Optional.empty();
+        if (type == null || "Skill".equalsIgnoreCase(type) || "插件".equals(type) || "PLUGIN".equalsIgnoreCase(type) || "提示词".equals(type) || "PROMPT".equalsIgnoreCase(type)) return Optional.empty();
         if (duplicateField) throw invalid();
         if (!"网页".equals(type) && !"WEB".equalsIgnoreCase(type)) throw invalid();
         if (entries.stream().anyMatch(e -> "SKILL.md".equals(e.path()))) throw invalid();

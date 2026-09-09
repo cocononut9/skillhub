@@ -199,8 +199,8 @@ public class ReviewService {
 
         Skill skill = skillRepository.findById(skillVersion.getSkillId())
                 .orElseThrow(() -> new DomainNotFoundException("skill.not_found", skillVersion.getSkillId()));
-        if (skill.getResourceType() == com.iflytek.skillhub.domain.skill.ResourceType.PLUGIN && !skillVersion.isDownloadReady()) {
-            throw new DomainBadRequestException("error.resource.plugin.scanRequired");
+        if (skill.getResourceType().requiresContentScan() && !skillVersion.isDownloadReady()) {
+            throw new DomainBadRequestException("error.resource.content.scanRequired");
         }
 
         int updated = reviewTaskRepository.updateStatusWithVersion(

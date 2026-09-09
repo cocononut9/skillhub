@@ -1736,11 +1736,22 @@
   "type": "Website",
   "open": "Open tool",
   "unavailable": "The website link is available after publication and while the resource is active.",
-  "uploadHint": "Upload Skill, website or plugin ZIPs. Website README: 资源类型：网页 and 使用入口：https://your-url. Plugin ZIP: README.md plus the real installer; declare 资源类型：插件 and 安装包：filename in README. Total package limit: 100MB. Plugin installers: ZIP, CRX, XPI and VSIX; installer contents must pass scanning."
+  "uploadHint": "Upload Skill, website or plugin ZIPs. Website README: 资源类型：网页 and 使用入口：https://your-url. Plugin ZIP: README.md plus the real installer; declare 资源类型：插件 and 安装包：filename in README. Total package limit: 100MB. Plugin installers: ZIP, CRX, XPI and VSIX; installer contents must pass scanning. For prompts, include README.md declaring 资源类型：提示词 and PROMPT.md containing the full prompt."
 },
   "pluginResource": {
   "type": "Plugin",
   "download": "Download installer",
   "scanScope": "Installer scripts, configuration and documentation must pass static scanning before download. Images receive format checks only. Plugins containing binary programs are unsupported."
+},
+  "promptResource": {
+  "type": "Prompt",
+  "body": "Prompt text",
+  "copy": "Copy prompt",
+  "copied": "Copied",
+  "download": "Download Markdown",
+  "unavailable": "Content is available after publication and a successful scan. Archived resources are unavailable.",
+  "loadError": "Failed to load the prompt. Refresh to retry.",
+  "loading": "Loading prompt…",
+  "copyError": "Copy failed. Select and copy the text manually."
 }
 }

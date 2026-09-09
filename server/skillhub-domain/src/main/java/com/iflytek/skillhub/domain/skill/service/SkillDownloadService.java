@@ -167,12 +167,13 @@ public class SkillDownloadService {
                                            String currentUserId,
                                            Map<Long, NamespaceRole> userNsRoles) {
         assertPublishedAccessible(skill);
-        if (skill.getResourceType() == ResourceType.PLUGIN && !version.isDownloadReady()) {
-            throw new DomainBadRequestException("error.resource.plugin.scanRequired");
+        if (skill.getResourceType().requiresContentScan() && !version.isDownloadReady()) {
+            throw new DomainBadRequestException("error.resource.content.scanRequired");
         }
         assertDownloadableVersion(skill, version, currentUserId, userNsRoles);
-        DownloadResult result = skill.getResourceType() == ResourceType.PLUGIN
-                ? buildPluginInstallerResult(version) : buildDownloadResult(skill, version);
+        DownloadResult result = skill.getResourceType() == ResourceType.PROMPT
+                ? buildResourceFileResult(version, "PROMPT.md", "text/markdown; charset=UTF-8")
+                : skill.getResourceType() == ResourceType.PLUGIN ? buildPluginInstallerResult(version) : buildDownloadResult(skill, version);
 
         // Only increment download count for PUBLISHED versions
         if (version.getStatus() == SkillVersionStatus.PUBLISHED) {
@@ -189,15 +190,19 @@ public class SkillDownloadService {
         } catch (java.io.IOException | IllegalArgumentException e) {
             throw new DomainBadRequestException("error.resource.plugin.invalid");
         }
+        return buildResourceFileResult(version, installer, "application/octet-stream");
+    }
+
+    private DownloadResult buildResourceFileResult(SkillVersion version, String filename, String contentType) {
         SkillFile file = skillFileRepository.findByVersionId(version.getId()).stream()
-                .filter(f -> f.getFilePath().equals(installer)).findFirst()
-                .orElseThrow(() -> new DomainBadRequestException("error.resource.plugin.installerMissing"));
+                .filter(f -> f.getFilePath().equals(filename)).findFirst()
+                .orElseThrow(() -> new DomainBadRequestException("error.resource.file.missing"));
         if (!objectStorageService.exists(file.getStorageKey())) {
-            throw new DomainBadRequestException("error.resource.plugin.installerMissing");
+            throw new DomainBadRequestException("error.resource.file.missing");
         }
         return new DownloadResult(() -> objectStorageService.getObject(file.getStorageKey()),
-                installer, file.getFileSize(), "application/octet-stream",
-                objectStorageService.generatePresignedUrl(file.getStorageKey(), Duration.ofMinutes(10), installer), false);
+                filename, file.getFileSize(), contentType,
+                objectStorageService.generatePresignedUrl(file.getStorageKey(), Duration.ofMinutes(10), filename), false);
     }
 
     private void recordPublishedDownload(Skill skill, SkillVersion version) {

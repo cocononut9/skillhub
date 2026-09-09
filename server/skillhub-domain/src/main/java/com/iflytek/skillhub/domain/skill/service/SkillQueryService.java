@@ -639,7 +639,7 @@ public class SkillQueryService {
         assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
         if (skill.getResourceType() != ResourceType.SKILL) {
             throw new DomainBadRequestException(skill.getResourceType() == ResourceType.WEB
-                    ? "error.resource.web.notInstallable" : "error.resource.plugin.notInstallable");
+                    ? "error.resource.web.notInstallable" : skill.getResourceType() == ResourceType.PROMPT ? "error.resource.prompt.notInstallable" : "error.resource.plugin.notInstallable");
         }
         SkillVersion resolved = resolveVersionEntity(skill, version, tag, hash);
         assertInstallableVersion(resolved, resolved.getVersion());
@@ -775,8 +775,8 @@ public class SkillQueryService {
     private SkillFile findFile(SkillVersion skillVersion, String filePath) {
         if (!"README.md".equals(filePath) && !skillVersion.isDownloadReady()) {
             Skill skill = skillRepository.findById(skillVersion.getSkillId()).orElse(null);
-            if (skill != null && skill.getResourceType() == ResourceType.PLUGIN) {
-                throw new DomainBadRequestException("error.resource.plugin.scanRequired");
+            if (skill != null && skill.getResourceType().requiresContentScan()) {
+                throw new DomainBadRequestException("error.resource.content.scanRequired");
             }
         }
         return availableFiles(skillVersion.getId()).stream()
