@@ -1,6 +1,7 @@
 package com.iflytek.skillhub.search;
 
 import java.util.List;
+import com.iflytek.skillhub.domain.skill.ResourceType;
 
 /**
  * Immutable search request model shared between application code and search implementations.
@@ -13,8 +14,21 @@ public record SearchQuery(
         int page,
         int size,
         List<String> labelSlugs,
-        boolean requireInstallableLatest
+        boolean requireInstallableLatest,
+        ResourceType resourceType
 ) {
+    public SearchQuery(
+            String keyword,
+            Long namespaceId,
+            SearchVisibilityScope visibilityScope,
+            String sortBy,
+            int page,
+            int size,
+            List<String> labelSlugs,
+            boolean requireInstallableLatest) {
+        this(keyword, namespaceId, visibilityScope, sortBy, page, size, labelSlugs, requireInstallableLatest, null);
+    }
+
     public SearchQuery(
             String keyword,
             Long namespaceId,

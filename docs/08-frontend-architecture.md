@@ -190,4 +190,6 @@ window.location.href = "/oauth2/authorization/github"
 
 **搜索页**：实时搜索（debounce 300ms）、技能卡片、排序（相关度/下载量/评分/最新）、命名空间过滤。匿名用户可搜索 PUBLIC 技能。注意：一期搜索仅基于 latest 版本内容，不支持按 tag/version 搜索（详见 `04-search-architecture.md` 5.1 节）。
 
+资源类型筛选提供全部、Skill、网页工具、插件和提示词。`/search` URL 与 `GET /api/web/skills` 使用可选参数 `resourceType=SKILL|WEB|PLUGIN|PROMPT`，不传表示全部；接口拒绝未知类型。类型与关键词、命名空间、标签共同过滤后，再排序、分页和统计总数。切换类型回到第一页，刷新、搜索、排序和翻页保留选项；“仅看收藏”也先按类型过滤再分页。此筛选不改变原有可见性规则，也不改变 CLI 的可安装 Skill 搜索。
+
 **审核页面**：左侧列表 + 右侧内容预览（Markdown + 文件树）、通过/拒绝 + 意见输入。

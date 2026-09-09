@@ -234,6 +234,9 @@
     }
   },
   "search": {
+    "resourceType": "资源类型",
+    "allResourceTypes": "全部",
+    "skillType": "Skill",
     "title": "搜索技能",
     "placeholder": "搜索技能...",
     "filters": {

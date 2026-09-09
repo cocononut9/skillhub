@@ -3,6 +3,7 @@ package com.iflytek.skillhub.controller.portal;
 import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.controller.support.IncludeOptions;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
+import com.iflytek.skillhub.domain.skill.ResourceType;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.SkillLabelDto;
@@ -46,6 +47,7 @@ public class SkillSearchController extends BaseApiController {
     public ApiResponse<SkillSearchAppService.SearchResponse> search(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String namespace,
+            @RequestParam(required = false) ResourceType resourceType,
             @RequestParam(name = "label", required = false) java.util.List<String> labels,
             @Parameter(description = "Optional response expansions. Supported value: labels")
             @RequestParam(name = "include", required = false) List<String> include,
@@ -67,7 +69,8 @@ public class SkillSearchController extends BaseApiController {
                 parsePositiveInt(size, DEFAULT_SIZE),
                 labels,
                 userId,
-                userNsRoles
+                userNsRoles,
+                resourceType
         );
 
         return ok("response.success.read", includeLabels ? withLabels(response) : response);

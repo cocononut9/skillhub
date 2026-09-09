@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { buildSkillSearchUrl, shouldEnableNamespaceMemberCandidates } from './skill-query-helpers'
 
 describe('buildSkillSearchUrl', () => {
+  it('combines a resource type with keyword, label and pagination', () => {
+    const url = new URL(buildSkillSearchUrl({ q: '报告', label: 'official', resourceType: 'WEB', page: 2, size: 12 }), 'https://example.test')
+    expect(Object.fromEntries(url.searchParams)).toEqual({ q: '报告', label: 'official', resourceType: 'WEB', page: '2', size: '12' })
+  })
+
   it('normalizes the query and strips the namespace prefix', () => {
     expect(buildSkillSearchUrl({
       q: '  hello world  ',

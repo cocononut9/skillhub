@@ -234,6 +234,9 @@
     }
   },
   "search": {
+    "resourceType": "Тип ресурса",
+    "allResourceTypes": "Все",
+    "skillType": "Skill",
     "title": "Поиск скиллов",
     "placeholder": "Поиск скиллов...",
     "filters": {

@@ -234,6 +234,9 @@
     }
   },
   "search": {
+    "resourceType": "Resource type",
+    "allResourceTypes": "All",
+    "skillType": "Skill",
     "title": "Search Skills",
     "placeholder": "Search skills...",
     "filters": {

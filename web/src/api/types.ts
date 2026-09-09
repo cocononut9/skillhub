@@ -402,7 +402,10 @@ export interface SkillTag {
 }
 
 // Search and pagination
+export type ResourceType = 'SKILL' | 'WEB' | 'PLUGIN' | 'PROMPT'
+
 export interface SearchParams {
+  resourceType?: ResourceType
   q?: string
   namespace?: string
   label?: string

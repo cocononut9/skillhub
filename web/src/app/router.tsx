@@ -2,6 +2,7 @@ import { lazy, Suspense, type ComponentType } from 'react'
 import { createRouter, createRoute, createRootRoute, redirect } from '@tanstack/react-router'
 import { Layout } from './layout'
 import { getCurrentUser } from '@/api/client'
+import type { ResourceType } from '@/api/types'
 import { RoleGuard } from '@/shared/components/role-guard'
 import { RouteError } from '@/shared/components/route-error'
 import { createRequireAuth } from '@/shared/lib/auth-route'
@@ -219,11 +220,13 @@ const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'search',
   component: SearchPage,
-  validateSearch: (search: Record<string, unknown>): { q: string; namespace?: string; label?: string; sort: string; page: number; starredOnly: boolean } => {
+  validateSearch: (search: Record<string, unknown>): { q: string; namespace?: string; label?: string; resourceType?: ResourceType; sort: string; page: number; starredOnly: boolean } => {
     return {
       q: normalizeSearchQuery(typeof search.q === 'string' ? search.q : ''),
       namespace: typeof search.namespace === 'string' && search.namespace ? search.namespace.replace(/^@/, '') : undefined,
       label: typeof search.label === 'string' && search.label ? search.label : undefined,
+      resourceType: search.resourceType === 'SKILL' || search.resourceType === 'WEB' || search.resourceType === 'PLUGIN' || search.resourceType === 'PROMPT'
+        ? search.resourceType : undefined,
       sort: (search.sort as string) || 'newest',
       page: Number(search.page) || 0,
       starredOnly: search.starredOnly === true || search.starredOnly === 'true',

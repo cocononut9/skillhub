@@ -10846,6 +10846,7 @@ export interface operations {
             query?: {
                 q?: string;
                 namespace?: string;
+                resourceType?: "SKILL" | "WEB" | "PLUGIN" | "PROMPT";
                 label?: string[];
                 /** @description Optional response expansions. Supported value: labels */
                 include?: string[];

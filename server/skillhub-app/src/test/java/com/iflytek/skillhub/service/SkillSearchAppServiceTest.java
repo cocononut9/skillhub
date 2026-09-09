@@ -93,6 +93,18 @@ class SkillSearchAppServiceTest {
     }
 
     @Test
+    void search_shouldForwardResourceTypeWithoutChangingVisibility() {
+        when(searchQueryService.search(any())).thenReturn(new SearchResult(List.of(), 0, 0, 12));
+        service.search("report", null, "newest", 0, 12, List.of("official"), null, null,
+                com.iflytek.skillhub.domain.skill.ResourceType.WEB);
+        var query = ArgumentCaptor.forClass(SearchQuery.class);
+        verify(searchQueryService).search(query.capture());
+        assertEquals(com.iflytek.skillhub.domain.skill.ResourceType.WEB, query.getValue().resourceType());
+        assertEquals(List.of("official"), query.getValue().labelSlugs());
+        assertNull(query.getValue().visibilityScope().userId());
+    }
+
+    @Test
     void search_shouldFillVisiblePageAcrossArchivedNamespaceResults() {
         Skill visibleSkill = new Skill(2L, "visible-skill", "owner-1", SkillVisibility.PUBLIC);
         setField(visibleSkill, "id", 11L);

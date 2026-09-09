@@ -2,7 +2,7 @@ import { startTransition, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
-import type { SkillSummary } from '@/api/types'
+import type { ResourceType, SkillSummary } from '@/api/types'
 import { useAuth } from '@/features/auth/use-auth'
 import { SearchBar } from '@/features/search/search-bar'
 import { SkillCard } from '@/features/skill/skill-card'
@@ -18,6 +18,13 @@ import { Button } from '@/shared/ui/button'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
 
 const PAGE_SIZE = 12
+const RESOURCE_TYPES: Array<{ value: ResourceType | undefined; label: string }> = [
+  { value: undefined, label: 'search.allResourceTypes' },
+  { value: 'SKILL', label: 'search.skillType' },
+  { value: 'WEB', label: 'webResource.type' },
+  { value: 'PLUGIN', label: 'pluginResource.type' },
+  { value: 'PROMPT', label: 'promptResource.type' },
+]
 
 function blurActiveElement() {
   if (typeof document === 'undefined' || typeof HTMLElement === 'undefined') {
@@ -56,11 +63,14 @@ function scrollToTopOnPageChange() {
  * Search text, sorting, pagination, and the starred-only filter are mirrored into router search
  * params so the page can be shared, restored, and revisited without losing state.
  */
-function filterStarredSkills(skills: SkillSummary[], query: string, namespace: string): SkillSummary[] {
+function filterStarredSkills(skills: SkillSummary[], query: string, namespace: string, resourceType?: ResourceType): SkillSummary[] {
   const normalizedQuery = query.trim().toLowerCase()
   const normalizedNamespace = namespace.trim().toLowerCase()
 
   return skills.filter((skill) => {
+    if (resourceType && (skill.resourceType ?? 'SKILL') !== resourceType) {
+      return false
+    }
     const matchesNamespace = !normalizedNamespace || skill.namespace.toLowerCase() === normalizedNamespace
     if (!matchesNamespace) {
       return false
@@ -94,6 +104,7 @@ export function SearchPage() {
   const q = normalizeSearchQuery(searchParams.q || '')
   const namespace = (searchParams.namespace || '').replace(/^@/, '')
   const selectedLabel = searchParams.label || ''
+  const resourceType = searchParams.resourceType
   const sort = searchParams.sort || 'newest'
   const page = searchParams.page ?? 0
   const starredOnly = searchParams.starredOnly ?? false
@@ -119,6 +130,7 @@ export function SearchPage() {
   }, [page])
 
   const { data, isLoading, isFetching } = useSearchSkills({
+    resourceType,
     q,
     namespace: namespace || undefined,
     label: selectedLabel || undefined,
@@ -143,44 +155,44 @@ export function SearchPage() {
 
     if (!parsedInput.query && !parsedInput.namespace) {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: '', namespace: '', label: selectedLabel, sort, page: 0, starredOnly }, replace: page === 0 })
+        navigate({ to: '/search', search: { q: '', namespace: '', label: selectedLabel, resourceType, sort, page: 0, starredOnly }, replace: page === 0 })
       })
       return
     }
 
     const timeoutId = window.setTimeout(() => {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, sort, page: 0, starredOnly }, replace: true })
+        navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, resourceType, sort, page: 0, starredOnly }, replace: true })
       })
     }, 250)
 
     return () => window.clearTimeout(timeoutId)
-  }, [navigate, namespace, page, q, queryInput, selectedLabel, sort, starredOnly])
+  }, [navigate, namespace, page, q, queryInput, selectedLabel, resourceType, sort, starredOnly])
 
   const handleSearch = (query: string) => {
     const parsedInput = parseNamespaceSearchInput(query)
     setQueryInput(query)
     startTransition(() => {
-      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, sort, page: 0, starredOnly }, replace: true })
+      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, resourceType, sort, page: 0, starredOnly }, replace: true })
     })
   }
 
   const handleSortChange = (newSort: string) => {
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort: newSort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, resourceType, sort: newSort, page: 0, starredOnly } })
   }
 
   const handlePageChange = (newPage: number) => {
     blurActiveElement()
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: newPage, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, resourceType, sort, page: newPage, starredOnly } })
   }
 
   const handleLabelToggle = (label: string) => {
     const nextLabel = selectedLabel === label ? '' : label
-    navigate({ to: '/search', search: { q, namespace, label: nextLabel, sort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: nextLabel, resourceType, sort, page: 0, starredOnly } })
   }
 
   const handleNamespaceClear = () => {
-    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, sort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, resourceType, sort, page: 0, starredOnly } })
   }
 
   const handleStarredToggle = () => {
@@ -194,7 +206,7 @@ export function SearchPage() {
       return
     }
 
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly: !starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, resourceType, sort, page: 0, starredOnly: !starredOnly } })
   }
 
   const handleSkillClick = (namespace: string, slug: string) => {
@@ -205,7 +217,7 @@ export function SearchPage() {
   }
 
   const filteredStarredSkills = starredOnly
-    ? sortStarredSkills(filterStarredSkills(starredSkills ?? [], q, namespace), sort)
+    ? sortStarredSkills(filterStarredSkills(starredSkills ?? [], q, namespace, resourceType), sort)
     : []
   const starredPageItems = starredOnly
     ? filteredStarredSkills.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -234,6 +246,21 @@ export function SearchPage() {
 
       {/* Sort And Filters */}
       <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t('search.resourceType')}>
+          <span className="shrink-0 text-sm font-medium text-muted-foreground">{t('search.resourceType')}</span>
+          {RESOURCE_TYPES.map((type) => (
+            <Button
+              key={type.value ?? 'all'}
+              variant={resourceType === type.value ? 'default' : 'outline'}
+              size="sm"
+              className="whitespace-nowrap"
+              aria-pressed={resourceType === type.value}
+              onClick={() => navigate({ to: '/search', search: { q, namespace, label: selectedLabel, resourceType: type.value, sort, page: 0, starredOnly } })}
+            >
+              {t(type.label)}
+            </Button>
+          ))}
+        </div>
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-muted-foreground">{t('search.sort.label')}</span>

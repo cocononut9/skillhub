@@ -88,6 +88,7 @@ vi.mock('@/app/page-shell-style', () => ({
 }))
 
 const useSearchSkillsMock = vi.fn()
+const useMyStarsMock = vi.fn()
 
 vi.mock('@/shared/hooks/use-skill-queries', () => ({
   useSearchSkills: (params: Record<string, unknown>) => {
@@ -106,11 +107,7 @@ vi.mock('@/shared/hooks/use-label-queries', () => ({
 }))
 
 vi.mock('@/shared/hooks/use-user-queries', () => ({
-  useMyStars: () => ({
-    data: [],
-    isLoading: false,
-    isFetching: false,
-  }),
+  useMyStars: () => useMyStarsMock(),
 }))
 
 import { SearchPage } from './search'
@@ -130,6 +127,7 @@ describe('SearchPage', () => {
     paginationProps.length = 0
     searchBarProps.length = 0
     searchSkillParams.length = 0
+    useMyStarsMock.mockReturnValue({ data: [], isLoading: false, isFetching: false })
     useSearchMock.mockReturnValue({
       q: 'agent',
       namespace: 'team-ai',
@@ -156,6 +154,42 @@ describe('SearchPage', () => {
     expect(html).toContain('Code Generation')
     expect(findButton('Code Generation').variant).toBe('default')
     expect(findButton('Official').variant).toBe('outline')
+  })
+
+  it('selects a resource type while preserving filters and resetting the page', () => {
+    renderToStaticMarkup(<SearchPage />)
+    findButton('webResource.type').onClick?.()
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/search', search: {
+      q: 'agent', namespace: 'team-ai', label: 'code-generation', resourceType: 'WEB', sort: 'downloads', page: 0, starredOnly: false,
+    } })
+  })
+
+  it('restores the selected type and retains it through paging, sorting and search', () => {
+    useSearchMock.mockReturnValue({ q: 'agent', resourceType: 'WEB', page: 0, sort: 'newest' })
+    renderToStaticMarkup(<SearchPage />)
+    expect(findButton('webResource.type').variant).toBe('default')
+    expect(searchSkillParams[0]).toMatchObject({ resourceType: 'WEB' })
+    paginationProps[0]?.onPageChange(1)
+    findButton('search.sort.downloads').onClick?.()
+    searchBarProps[0]?.onSearch?.('report')
+    findButton('search.filterStarred').onClick?.()
+    for (const [navigation] of navigateMock.mock.calls) {
+      expect(navigation.search.resourceType).toBe('WEB')
+    }
+    findButton('search.allResourceTypes').onClick?.()
+    expect(navigateMock.mock.lastCall?.[0].search.resourceType).toBeUndefined()
+    expect(navigateMock.mock.lastCall?.[0].search.page).toBe(0)
+  })
+
+  it('filters starred resources before calculating pages and counts', () => {
+    useSearchMock.mockReturnValue({ q: 'report', resourceType: 'WEB', page: 1, sort: 'newest', starredOnly: true })
+    useMyStarsMock.mockReturnValue({ data: Array.from({ length: 30 }, (_, id) => ({
+      id, displayName: 'report', namespace: 'global', slug: `report-${id}`, resourceType: id < 13 ? 'WEB' : 'PLUGIN', updatedAt: '2026-09-09T00:00:00Z',
+    })), isLoading: false, isFetching: false })
+    const html = renderToStaticMarkup(<SearchPage />)
+    expect(html).toContain('search.results:13')
+    expect(html.match(/skill-card/g)).toHaveLength(1)
+    expect(paginationProps).toHaveLength(1)
   })
 
   it('wraps the filter chip row so many labels can flow onto multiple lines', () => {

@@ -23,6 +23,33 @@ import static org.mockito.Mockito.when;
 
 class PostgresFullTextQueryServiceTest {
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(com.iflytek.skillhub.domain.skill.ResourceType.class)
+    void resourceTypeShouldFilterBothPageAndTotalBeforePagination(com.iflytek.skillhub.domain.skill.ResourceType type) {
+        EntityManager entityManager = mock(EntityManager.class);
+        Query nativeQuery = mock(Query.class);
+        Query countQuery = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(nativeQuery, countQuery);
+        when(nativeQuery.getResultList()).thenReturn(List.of(7L));
+        when(countQuery.getSingleResult()).thenReturn(13L);
+
+        var result = new PostgresFullTextQueryService(entityManager).search(new SearchQuery(
+                "report", 2L, SearchVisibilityScope.anonymous(), "downloads", 1, 12, List.of("official"), false, type));
+
+        verify(nativeQuery).setParameter("resourceType", type.name());
+        verify(countQuery).setParameter("resourceType", type.name());
+        verify(nativeQuery).setParameter("offset", 12);
+        verify(nativeQuery).setParameter("namespaceId", 2L);
+        verify(countQuery).setParameter("labelSlugs", List.of("official"));
+        var sql = ArgumentCaptor.forClass(String.class);
+        verify(entityManager, org.mockito.Mockito.times(2)).createNativeQuery(sql.capture());
+        assertThat(sql.getAllValues()).allSatisfy(statement -> assertThat(statement)
+                .contains("s.resource_type = :resourceType", "s.hidden = FALSE", "d.visibility = 'PUBLIC'"));
+        assertThat(sql.getAllValues().getLast()).doesNotContain("LIMIT", "OFFSET", "ORDER BY");
+        assertThat(result.skillIds()).containsExactly(7L);
+        assertThat(result.total()).isEqualTo(13L);
+    }
+
     @Test
     void shortKeywordsShouldUsePrefixTsQuery() {
         EntityManager entityManager = mock(EntityManager.class);

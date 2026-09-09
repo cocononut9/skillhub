@@ -136,6 +136,10 @@ public class PostgresFullTextQueryService implements SearchQueryService {
         sql.append(") ");
 
         // Namespace filtering
+        if (query.resourceType() != null) {
+            sql.append("AND s.resource_type = :resourceType ");
+        }
+
         if (query.namespaceId() != null) {
             sql.append("AND d.namespace_id = :namespaceId ");
         }
@@ -193,6 +197,10 @@ public class PostgresFullTextQueryService implements SearchQueryService {
 
         Query nativeQuery = entityManager.createNativeQuery(sql.toString());
 
+        if (query.resourceType() != null) {
+            nativeQuery.setParameter("resourceType", query.resourceType().name());
+        }
+
         if (query.visibilityScope().userId() != null) {
             nativeQuery.setParameter("memberNamespaceIds", memberNamespaceIds);
         }
@@ -236,6 +244,10 @@ public class PostgresFullTextQueryService implements SearchQueryService {
         }
 
         Query countQuery = entityManager.createNativeQuery(countSql);
+
+        if (query.resourceType() != null) {
+            countQuery.setParameter("resourceType", query.resourceType().name());
+        }
 
         if (query.visibilityScope().userId() != null) {
             countQuery.setParameter("memberNamespaceIds", memberNamespaceIds);
