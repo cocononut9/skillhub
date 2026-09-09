@@ -207,6 +207,12 @@ skillhub/
 
 ## Critical Rules
 
+### Shared Local Database Migrations
+
+- Before assigning a Flyway version, inspect both repository migrations and the target database's `flyway_schema_history`; other feature branches may already have applied a version.
+- Preserve the applied V50 plugin and V51 prompt migrations unchanged. Integrated Codex usage and demand migrations are V52 and V53; see `docs/resource-demand-integration.md`.
+- Use an isolated database for an older or divergent feature branch. Do not repair checksums or reset the shared database to bypass a branch mismatch.
+
 ### Do Not Manually Edit Generated Files
 
 - `web/src/api/generated/schema.d.ts` — regenerated via `make generate-api`

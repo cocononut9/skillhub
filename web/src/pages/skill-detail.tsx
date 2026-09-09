@@ -10,6 +10,7 @@ import { FilePreviewDialog } from '@/features/skill/file-preview-dialog'
 import type { FileTreeNode } from '@/features/skill/file-tree-builder'
 import type { SkillFile } from '@/api/types'
 import { getWebsiteUrl } from '@/features/skill/web-resource'
+import { PromptResourceContent } from '@/features/skill/prompt-resource-content'
 import { InstallCommand } from '@/features/skill/install-command'
 import { ShareButton } from '@/features/skill/share-button'
 import { InstallForAgentButton } from '@/features/skill/install-for-agent-button'
@@ -165,13 +166,16 @@ export function SkillDetailPage() {
   const qslug = detailQueriesEnabled ? slug : ''
   const { data: skill, isLoading: isLoadingSkill, isFetching: isFetchingSkill, error: skillError } = useSkillDetail(qns, qslug, detailQueriesEnabled)
   const skillReady = detailQueriesEnabled && Boolean(skill) && !isLoadingSkill && !isFetchingSkill && !skillError
-  const { data: usageStats } = useSkillUsageStats(qns, qslug, 30, skillReady)
+  const { data: usageStats } = useSkillUsageStats(qns, qslug, 30, skillReady && (!skill?.resourceType || skill.resourceType === 'SKILL'))
   const { data: versions } = useSkillVersions(qns, qslug, skillReady)
   const headlineVersion = skill ? getHeadlineVersion(skill) : null
   const publishedVersion = skill ? getPublishedVersion(skill) : null
   const ownerPreviewVersion = skill ? getOwnerPreviewVersion(skill) : null
   const selectedVersion = headlineVersion?.version ?? versions?.[0]?.version
   const isWebResource = skill?.resourceType === 'WEB'
+  const isPluginResource = skill?.resourceType === 'PLUGIN'
+  const isPromptResource = skill?.resourceType === 'PROMPT'
+  const isSkillResource = !isWebResource && !isPluginResource && !isPromptResource
   const { data: webVersionDetail } = useSkillVersionDetail(qns, qslug, selectedVersion, skillReady && isWebResource)
   const websiteUrl = getWebsiteUrl(webVersionDetail?.parsedMetadataJson)
   const selectedVersionEntry = versions?.find((version) => version.version === selectedVersion) ?? versions?.[0]
@@ -914,6 +918,13 @@ export function SkillDetailPage() {
           </TabsList>
 
           <TabsContent value="readme" className="mt-6">
+            {isPromptResource && <PromptResourceContent
+              key={selectedVersion}
+              namespace={qns}
+              slug={qslug}
+              version={selectedVersion}
+              enabled={skillReady && isVersionDownloadable && skill.status !== 'ARCHIVED'}
+            />}
             {readme ? (
               <Card className="p-8 space-y-4">
                 {documentationPath ? (
@@ -1145,6 +1156,7 @@ export function SkillDetailPage() {
 
           <div className="h-px bg-border/40" />
 
+          {isSkillResource && <>
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">{t('skillDetail.usageCount30Days')}</div>
             <div className="font-semibold text-foreground">
@@ -1166,6 +1178,7 @@ export function SkillDetailPage() {
           </div>
 
           <div className="h-px bg-border/40" />
+          </>}
 
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">{t('skillDetail.rating')}</div>
@@ -1213,7 +1226,7 @@ export function SkillDetailPage() {
           </div>
         </Card>
 
-        {!isWebResource && publishedVersion && canInteract && (
+        {isSkillResource && publishedVersion && canInteract && (
           <Card className="p-5 space-y-4">
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-muted-foreground" />
@@ -1283,6 +1296,7 @@ export function SkillDetailPage() {
           </Card>
         )}
 
+        {isPluginResource && <p className="text-sm text-muted-foreground">{t('pluginResource.scanScope')}</p>}
         {!isWebResource && <Button
           className="w-full"
           variant="outline"
@@ -1293,7 +1307,7 @@ export function SkillDetailPage() {
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
           </svg>
-          {t('skillDetail.download')}
+          {t(isPromptResource ? 'promptResource.download' : isPluginResource ? 'pluginResource.download' : 'skillDetail.download')}
         </Button>}
 
         <ShareButton
@@ -1302,7 +1316,7 @@ export function SkillDetailPage() {
           description={skill.summary}
         />
 
-        {!isWebResource && <InstallForAgentButton
+        {isSkillResource && <InstallForAgentButton
           namespace={namespace}
           slug={slug}
           version={selectedVersionEntry?.version ?? publishedVersion?.version ?? ''}

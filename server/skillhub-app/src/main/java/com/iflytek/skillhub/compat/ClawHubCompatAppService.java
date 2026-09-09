@@ -96,7 +96,7 @@ public class ClawHubCompatAppService {
         );
 
         List<ClawHubSearchResponse.ClawHubSearchResult> results = response.items().stream()
-                .filter(item -> !"WEB".equals(item.resourceType()))
+                .filter(item -> "SKILL".equals(item.resourceType()))
                 .map(this::toSearchResult)
                 .toList();
 
@@ -228,7 +228,7 @@ public class ClawHubCompatAppService {
                 : Map.of();
 
         List<ClawHubSkillListResponse.SkillListItem> items = response.items().stream()
-                .filter(item -> !"WEB".equals(item.resourceType()))
+                .filter(item -> "SKILL".equals(item.resourceType()))
                 .map(item -> toSkillListItem(
                         item,
                         includeLabels ? labelsBySkillId.getOrDefault(item.id(), List.of()) : null))

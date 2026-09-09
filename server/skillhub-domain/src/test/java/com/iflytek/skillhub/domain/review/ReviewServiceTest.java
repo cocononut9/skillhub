@@ -564,6 +564,7 @@ class ReviewServiceTest {
             when(namespaceRepository.findById(NAMESPACE_ID)).thenReturn(Optional.of(ns));
             when(permissionChecker.canReview(any(), any(), any(), anyMap(), anySet())).thenReturn(true);
             when(skillVersionRepository.findById(SKILL_VERSION_ID)).thenReturn(Optional.of(sv));
+            when(skillRepository.findById(SKILL_ID)).thenReturn(Optional.of(createSkill()));
             when(reviewTaskRepository.updateStatusWithVersion(any(), any(), any(), any(), any())).thenReturn(0);
 
             assertThrows(ConcurrentModificationException.class,

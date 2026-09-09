@@ -14,7 +14,7 @@
 
 ## 技术范围
 
-- 数据库迁移：`V51__demand_square.sql` 新增 `demand`、`demand_support`、`demand_supplement` 三张表，不修改现有业务表结构。
+- 数据库迁移：`V53__demand_square.sql` 新增 `demand`、`demand_support`、`demand_supplement` 三张表，不修改现有业务表结构。集成分支保留 V50 插件与 V51 提示词迁移，V52 为使用统计。
 - API：`/api/web/demands`、`/api/v1/demands`，仅支持登录会话，写操作保留 CSRF 校验；不开放 API Token 调用。
 - 查询：需求和补充分页，默认每页 20 条、上限 100 条；排序使用实际支持记录数，时间和 ID 作为稳定排序条件。
 - 写入：锁定对应需求行后执行支持、撤回和内容修改，支持关系另有数据库唯一约束，保证并发重试不重复计数。

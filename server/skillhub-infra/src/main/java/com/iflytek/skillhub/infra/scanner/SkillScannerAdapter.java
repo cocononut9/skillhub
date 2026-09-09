@@ -33,11 +33,17 @@ public class SkillScannerAdapter implements SecurityScanner {
     @Override
     public SecurityScanResponse scan(SecurityScanRequest request) {
         log.info("Starting security scan for versionId={}, mode={}", request.skillVersionId(), scanMode);
-        try (var scanPackage = WebResourceScanPackage.prepare(Path.of(request.skillPackagePath()))) {
+        try (var pluginPackage = PluginResourceScanPackage.prepare(Path.of(request.skillPackagePath()));
+             var scanPackage = WebResourceScanPackage.prepare(pluginPackage.path())) {
             SkillScannerApiResponse apiResponse = MODE_LOCAL.equalsIgnoreCase(scanMode)
                     ? skillScannerService.scanDirectory(scanPackage.path().toString(), scanOptions)
                     : skillScannerService.scanUpload(scanPackage.path(), scanOptions);
-            return mapToResponse(apiResponse);
+            SecurityScanResponse response = mapToResponse(apiResponse);
+            return new SecurityScanResponse(response.scanId(), response.verdict(), response.findingsCount(),
+                    response.maxSeverity(), response.findings().stream().map(f -> new SecurityFinding(
+                            f.ruleId(), f.severity(), f.category(), f.title(), f.message(),
+                            pluginPackage.originalPath(f.filePath()), f.lineNumber(), f.codeSnippet(),
+                            f.remediation(), f.analyzer(), f.metadata())).toList(), response.scanDurationSeconds());
         } catch (HttpClientException | java.io.IOException e) {
             log.error("Security scan failed for versionId={}: {}", request.skillVersionId(), e.getMessage());
             throw new SecurityScanException("Security scan request failed: " + e.getMessage(), e);

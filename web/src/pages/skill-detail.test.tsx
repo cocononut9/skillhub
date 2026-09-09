@@ -318,6 +318,22 @@ describe('SkillDetailPage', () => {
     useSkillFileMock.mockReturnValue({ data: null, isLoading: false, error: null })
   })
 
+  it('shows prompt content and Markdown download without Skill installation', () => {
+    useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'PROMPT' }), isLoading: false })
+    render(<SkillDetailPage />)
+    expect(screen.getByRole('button', { name: 'promptResource.download' })).toBeTruthy()
+    expect(screen.queryByText('skillDetail.usageCount30Days')).toBeNull()
+    expect(screen.queryByText('skillDetail.install')).toBeNull()
+  })
+
+  it('offers a plugin installer without Skill installation controls', () => {
+    useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'PLUGIN' }), isLoading: false })
+    render(<SkillDetailPage />)
+    expect(screen.getByRole('button', { name: 'pluginResource.download' })).toBeTruthy()
+    expect(screen.queryByText('skillDetail.usageCount30Days')).toBeNull()
+    expect(screen.queryByText('skillDetail.install')).toBeNull()
+  })
+
   it('opens a published website in a new tab and omits skill installation', () => {
     useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'WEB' }), isLoading: false })
     useSkillVersionDetailMock.mockReturnValue({ data: { parsedMetadataJson: JSON.stringify({ frontmatter: { resourceType: 'WEB', websiteUrl: 'https://example.com/tool' } }) } })

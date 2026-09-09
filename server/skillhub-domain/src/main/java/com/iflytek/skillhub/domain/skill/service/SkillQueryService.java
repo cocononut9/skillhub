@@ -354,7 +354,7 @@ public class SkillQueryService {
                 .collect(Collectors.toMap(SkillVersion::getId, Function.identity()));
 
         List<Skill> installableSkills = accessibleSkills.stream()
-                .filter(skill -> skill.getResourceType() != ResourceType.WEB)
+                .filter(skill -> skill.getResourceType() == ResourceType.SKILL)
                 .filter(skill -> SkillInstallability.isInstallableVersion(latestVersions.get(skill.getLatestVersionId())))
                 .sorted(Comparator.comparing(Skill::getSlug)
                         .thenComparing(Skill::getId, Comparator.nullsLast(Comparator.naturalOrder())))
@@ -637,8 +637,9 @@ public class SkillQueryService {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
         assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
-        if (skill.getResourceType() == ResourceType.WEB) {
-            throw new DomainBadRequestException("error.resource.web.notInstallable");
+        if (skill.getResourceType() != ResourceType.SKILL) {
+            throw new DomainBadRequestException(skill.getResourceType() == ResourceType.WEB
+                    ? "error.resource.web.notInstallable" : skill.getResourceType() == ResourceType.PROMPT ? "error.resource.prompt.notInstallable" : "error.resource.plugin.notInstallable");
         }
         SkillVersion resolved = resolveVersionEntity(skill, version, tag, hash);
         assertInstallableVersion(resolved, resolved.getVersion());
@@ -772,6 +773,12 @@ public class SkillQueryService {
     }
 
     private SkillFile findFile(SkillVersion skillVersion, String filePath) {
+        if (!"README.md".equals(filePath) && !skillVersion.isDownloadReady()) {
+            Skill skill = skillRepository.findById(skillVersion.getSkillId()).orElse(null);
+            if (skill != null && skill.getResourceType().requiresContentScan()) {
+                throw new DomainBadRequestException("error.resource.content.scanRequired");
+            }
+        }
         return availableFiles(skillVersion.getId()).stream()
                 .filter(f -> f.getFilePath().equals(filePath))
                 .findFirst()

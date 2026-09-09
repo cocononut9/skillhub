@@ -29,6 +29,23 @@ class SkillPackageArchiveExtractorTest {
     }
 
     @Test
+    void permitsLargerPluginInstallerWithoutUnpackingAndRetainsSkillLimit() throws Exception {
+        SkillPublishProperties props = new SkillPublishProperties();
+        props.setMaxSingleFileSize(1024);
+        props.setMaxPackageSize(8192);
+        var custom = new SkillPackageArchiveExtractor(props);
+        byte[] installer = createZip(Map.of("internal.js", new byte[4096]));
+        byte[] padded = java.util.Arrays.copyOf(installer, 2048);
+        byte[] readme = "# 测试插件\n\n> 安装工具。\n\n资源类型：插件\n安装包：demo.zip\n".getBytes(StandardCharsets.UTF_8);
+        var file = new MockMultipartFile("file", "plugin.zip", "application/zip", createZip(Map.of("README.md", readme, "demo.zip", padded)));
+        var entries = custom.extract(file);
+        assertEquals(2, entries.size());
+        org.junit.jupiter.api.Assertions.assertArrayEquals(padded, entries.stream().filter(e -> e.path().equals("demo.zip")).findFirst().orElseThrow().content());
+        var ordinary = new MockMultipartFile("file", "skill.zip", "application/zip", createZip(Map.of("demo.zip", padded)));
+        assertThrows(IllegalArgumentException.class, () -> custom.extract(ordinary));
+    }
+
+    @Test
     void shouldRejectPathTraversalEntry() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
             "file",

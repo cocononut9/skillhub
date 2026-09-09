@@ -60,6 +60,25 @@ class SecurityScanServiceTest {
         }
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"PLUGIN", "PROMPT"})
+    void resourceDownloadRemainsLockedUntilCurrentScanIsSafe(String resourceType) throws Exception {
+        SkillVersion version = new SkillVersion(8L, "1.0.0", "publisher-1");
+        setId(version, 42L);
+        version.setStatus(SkillVersionStatus.PUBLISHED);
+        version.setParsedMetadataJson("{\"frontmatter\":{\"resourceType\":\"" + resourceType + "\"}}");
+        SecurityAudit audit = new SecurityAudit(42L, ScannerType.SKILL_SCANNER, "plugin-task");
+        given(auditRepository.findByTaskId("plugin-task")).willReturn(Optional.of(audit));
+        given(auditRepository.findLatestActiveByVersionIdAndScannerType(42L, ScannerType.SKILL_SCANNER)).willReturn(Optional.of(audit));
+        given(skillVersionRepository.findById(42L)).willReturn(Optional.of(version));
+        service.processScanResult("plugin-task", 42L, ScannerType.SKILL_SCANNER,
+                new SecurityScanResponse("scan-1", SecurityVerdict.DANGEROUS, 1, "HIGH", List.of(), 1));
+        assertThat(version.isDownloadReady()).isFalse();
+        service.processScanResult("plugin-task", 42L, ScannerType.SKILL_SCANNER,
+                new SecurityScanResponse("scan-2", SecurityVerdict.SAFE, 0, "SAFE", List.of(), 1));
+        assertThat(version.isDownloadReady()).isTrue();
+    }
+
     @Test
     void securityAudit_startsWithSuspiciousUnsafeDefaults() {
         SecurityAudit audit = new SecurityAudit(42L, ScannerType.SKILL_SCANNER);

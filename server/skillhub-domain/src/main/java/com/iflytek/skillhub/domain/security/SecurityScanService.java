@@ -122,6 +122,7 @@ public class SecurityScanService {
 
     private void persistScanAttempt(SkillVersion version, ScanTask scanTask) {
         // A new record preserves prior scan history while identifying this attempt independently.
+        if (requiresContentScan(version)) version.setDownloadReady(false);
         auditRepository.save(new SecurityAudit(version.getId(), ScannerType.SKILL_SCANNER, scanTask.taskId()));
         if (scanTaskOutboxRepository != null) {
             scanTaskOutboxRepository.save(new ScanTaskOutbox(scanTask));
@@ -131,6 +132,8 @@ public class SecurityScanService {
         // Only transition to SCANNING if the version is not already published (auto-publish flow)
         if (version.getStatus() != SkillVersionStatus.PUBLISHED) {
             version.setStatus(SkillVersionStatus.SCANNING);
+            skillVersionRepository.save(version);
+        } else if (requiresContentScan(version)) {
             skillVersionRepository.save(version);
         }
     }
@@ -203,7 +206,18 @@ public class SecurityScanService {
             }
         }
         if (currentAttempt) {
+            if (requiresContentScan(version)) version.setDownloadReady(response.verdict() == SecurityVerdict.SAFE);
             skillVersionRepository.save(version);
+        }
+    }
+
+    private boolean requiresContentScan(SkillVersion version) {
+        if (version.getParsedMetadataJson() == null) return false;
+        try {
+            return java.util.Set.of("PLUGIN", "PROMPT").contains(objectMapper.readTree(version.getParsedMetadataJson())
+                    .path("frontmatter").path("resourceType").asText());
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("Invalid version metadata", e);
         }
     }
 

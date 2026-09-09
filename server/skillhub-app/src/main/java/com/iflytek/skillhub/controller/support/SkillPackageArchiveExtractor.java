@@ -80,7 +80,16 @@ public class SkillPackageArchiveExtractor {
             }
         }
 
-        return stripSingleRootDirectory(entries);
+        List<PackageEntry> normalized = stripSingleRootDirectory(entries);
+        var plugin = new com.iflytek.skillhub.domain.skill.metadata.PluginResourceMetadataParser().parse(normalized);
+        String installer = plugin.map(m -> (String) m.frontmatter().get("installerFile")).orElse(null);
+        for (PackageEntry entry : normalized) {
+            if (!entry.path().equals(installer) && entry.size() > maxSingleFileSize) {
+                throw new IllegalArgumentException("File too large: " + entry.path() + " (" + entry.size()
+                        + " bytes, max: " + maxSingleFileSize + ")");
+            }
+        }
+        return normalized;
     }
 
     public ExtractionResult extractWithWarnings(MultipartFile file) throws IOException {
@@ -183,13 +192,15 @@ public class SkillPackageArchiveExtractor {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192];
         long totalRead = 0;
+        long fileLimit = com.iflytek.skillhub.domain.skill.metadata.PluginResourceMetadataParser.isInstallerFile(path)
+                ? maxTotalPackageSize : maxSingleFileSize;
         int read;
         while ((read = zis.read(buffer)) != -1) {
             totalRead += read;
-            if (totalRead > maxSingleFileSize) {
+            if (totalRead > fileLimit) {
                 throw new IllegalArgumentException(
                         "File too large: " + path + " (" + totalRead + " bytes, max: "
-                                + maxSingleFileSize + ")"
+                                + fileLimit + ")"
                 );
             }
             outputStream.write(buffer, 0, read);
