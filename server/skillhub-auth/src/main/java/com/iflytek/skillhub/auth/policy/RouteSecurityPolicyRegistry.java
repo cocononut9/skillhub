@@ -17,6 +17,8 @@ import org.springframework.util.AntPathMatcher;
 public class RouteSecurityPolicyRegistry {
 
     private static final List<RouteAuthorizationPolicy> AUTHORIZATION_POLICIES = List.of(
+            RouteAuthorizationPolicy.authenticated(null, "/api/v1/demands/**"),
+            RouteAuthorizationPolicy.authenticated(null, "/api/web/demands/**"),
             RouteAuthorizationPolicy.permitAll(null, "/api/v1/health"),
             RouteAuthorizationPolicy.permitAll(null, "/api/v1/search"),
             RouteAuthorizationPolicy.permitAll(null, "/api/v1/resolve/**"),
@@ -173,6 +175,8 @@ public class RouteSecurityPolicyRegistry {
      * authorization list opens must also be reachable with a token holding the required scope.</p>
      */
     private static final Set<String> SESSION_ONLY_ROUTES = Set.of(
+            "ANY /api/v1/demands/**",
+            "ANY /api/web/demands/**",
             "ANY /api/v1/auth/session/bootstrap",
             "ANY /api/v1/auth/direct/login",
             "ANY /api/v1/auth/local/**",

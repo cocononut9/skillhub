@@ -496,7 +496,23 @@ const adminNamespacesRoute = createRoute({
   component: AdminNamespacesPage,
 })
 
+const demandsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'demands',
+  beforeLoad: requireAuth,
+  component: createLazyRouteComponent(() => import('@/pages/demands'), 'DemandsPage'),
+})
+
+const demandDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'demands/$demandId',
+  beforeLoad: requireAuth,
+  component: createLazyRouteComponent(() => import('@/pages/demand-detail'), 'DemandDetailPage'),
+})
+
 const routeTree = rootRoute.addChildren([
+  demandsRoute,
+  demandDetailRoute,
   landingRoute,
   skillsRoute,
   loginRoute,

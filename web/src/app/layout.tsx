@@ -66,6 +66,7 @@ export function Layout() {
     { label: t('nav.landing'), to: '/', exact: true },
     { label: t('nav.publish'), to: '/dashboard/publish', auth: true },
     { label: t('nav.search'), to: '/search' },
+    { label: t('demand.square'), to: '/demands', auth: true },
     { label: t('nav.dashboard'), to: '/dashboard', auth: true },
     { label: t('nav.mySkills'), to: '/dashboard/skills', auth: true },
   ]
@@ -117,6 +118,7 @@ export function Layout() {
         </nav>
 
         <div className="flex items-center gap-2 text-[15px] font-normal sm:gap-3" style={{ color: 'hsl(var(--text-secondary))' }}>
+          {user && <Link to="/demands" className="text-xs md:hidden">{t('demand.square')}</Link>}
           <ThemeToggle />
           <LanguageSwitcher />
           {user && <NotificationBell />}

@@ -17,6 +17,7 @@ describe('getNotificationQueryKeyScope', () => {
 describe('clearSessionScopedQueries', () => {
   it('removes user-scoped notification and dashboard caches without touching public search caches', () => {
     const queryClient = new QueryClient()
+    queryClient.setQueryData(['demands', 42], { hidden: true, mine: true })
     queryClient.setQueryData(['notifications', 'user-a', 'unread-count'], { count: 3 })
     queryClient.setQueryData(['labels', 'visible'], [{ slug: 'official' }])
     queryClient.setQueryData(['skills', 'my', { page: 0, size: 12 }], { items: [] })
@@ -24,6 +25,7 @@ describe('clearSessionScopedQueries', () => {
 
     clearSessionScopedQueries(queryClient)
 
+    expect(queryClient.getQueryData(['demands', 42])).toBeUndefined()
     expect(queryClient.getQueryData(['notifications', 'user-a', 'unread-count'])).toBeUndefined()
     expect(queryClient.getQueryData(['labels', 'visible'])).toBeUndefined()
     expect(queryClient.getQueryData(['skills', 'my', { page: 0, size: 12 }])).toBeUndefined()
