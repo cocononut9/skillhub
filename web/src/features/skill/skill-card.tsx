@@ -65,16 +65,16 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
       tabIndex={isInteractive ? 0 : undefined}
     >
       <div className="flex h-full flex-col">
-        <div className="flex items-start justify-between mb-3">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg group-hover:text-primary transition-colors" style={{ color: 'hsl(var(--foreground))' }}>
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="min-w-0 flex-1 space-y-2">
+            <h3 className="line-clamp-2 break-words font-semibold text-lg group-hover:text-primary transition-colors" style={{ color: 'hsl(var(--foreground))' }} title={skill.displayName}>
               {skill.displayName}
             </h3>
           </div>
-          <div className="flex items-center gap-2">
-            {skill.resourceType === 'WEB' && <span className="rounded-full bg-secondary px-2 py-1 text-xs">{t('webResource.type')}</span>}
-            {skill.resourceType === 'PLUGIN' && <span className="rounded-full bg-secondary px-2 py-1 text-xs">{t('pluginResource.type')}</span>}
-            {skill.resourceType === 'PROMPT' && <span className="rounded-full bg-secondary px-2 py-1 text-xs">{t('promptResource.type')}</span>}
+          <div className="flex shrink-0 items-center gap-2">
+            {skill.resourceType === 'WEB' && <span className="shrink-0 whitespace-nowrap rounded-full bg-secondary px-2 py-1 text-xs">{t('webResource.type')}</span>}
+            {skill.resourceType === 'PLUGIN' && <span className="shrink-0 whitespace-nowrap rounded-full bg-secondary px-2 py-1 text-xs">{t('pluginResource.type')}</span>}
+            {skill.resourceType === 'PROMPT' && <span className="shrink-0 whitespace-nowrap rounded-full bg-secondary px-2 py-1 text-xs">{t('promptResource.type')}</span>}
             <NamespaceBadge type="TEAM" name={`@${skill.namespace}`} />
           </div>
         </div>
