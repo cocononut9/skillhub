@@ -92,6 +92,15 @@ export const commands = {
     summary: 'Check or update CLI itself',
     usage: 'skillhub update [--check] [--json]',
     examples: ['skillhub update --check', 'skillhub update']
+  },
+  telemetry: {
+    summary: 'Configure and inspect Codex skill usage telemetry',
+    usage: 'skillhub telemetry <setup|status|flush> [--json]',
+    examples: [
+      'skillhub telemetry setup',
+      'skillhub telemetry status',
+      'skillhub telemetry flush'
+    ]
   }
 } as const
 

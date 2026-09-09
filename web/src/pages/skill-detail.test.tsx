@@ -192,6 +192,10 @@ vi.mock('@/features/social/star-button', () => ({
 
 vi.mock('@/shared/hooks/use-skill-queries', () => ({
   useSkillDetail: () => useSkillDetailMock(),
+  useSkillUsageStats: () => ({
+    data: { usageCount: 8, uniqueUserCount: 3, repeatUserCount: 1, windowDays: 30 },
+    isLoading: false,
+  }),
   useSkillLabels: () => useSkillLabelsMock(),
   useVisibleLabels: () => ({
     data: [{ slug: 'code-generation', type: 'RECOMMENDED', displayName: 'Code Generation' }],

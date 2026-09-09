@@ -76,6 +76,22 @@ export interface DryRunResponse {
   resolvedVersion: string | null
 }
 
+export type SkillUsageEvidenceType = 'EXPLICIT_INVOCATION' | 'SCRIPT_EXECUTED'
+
+export interface SkillUsageEventRequest {
+  eventId: string
+  namespace: string
+  slug: string
+  version: string
+  client: 'CODEX'
+  evidenceType: SkillUsageEvidenceType
+  occurredAt: string
+}
+
+export interface SkillUsageEventResponse {
+  accepted: boolean
+}
+
 interface PublicErrorFields {
   msg?: string
   requestId?: string
@@ -203,6 +219,23 @@ export class SkillHubClient {
       throw new CliError('registry unreachable', EXIT.network, { registry: this.registry, next: 'check network or pass --registry' })
     }
     return this.handleJsonResponse<SubmitReviewResponse>(response)
+  }
+
+  async reportSkillUsage(event: SkillUsageEventRequest): Promise<SkillUsageEventResponse> {
+    let response: Response
+    try {
+      response = await this.fetchImpl(`${this.registry}/api/cli/v1/skill-usage-events`, {
+        method: 'POST',
+        headers: { ...this.headers(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(event)
+      })
+    } catch {
+      throw new CliError('registry unreachable', EXIT.network, {
+        registry: this.registry,
+        next: 'usage event was kept in the local telemetry outbox'
+      })
+    }
+    return this.handleJsonResponse<SkillUsageEventResponse>(response)
   }
 
   private async getJson<T>(path: string): Promise<T> {

@@ -14,6 +14,7 @@ import { updateCommand } from './commands/update'
 import { upgradeCommand, type UpgradeCommandOptions } from './commands/upgrade'
 import { versionCommand } from './commands/version'
 import { whoamiCommand } from './commands/whoami'
+import { telemetryCommand } from './commands/telemetry'
 import { EXIT } from './shared/constants'
 import { CliError } from './shared/errors'
 import { renderError } from './shared/output'
@@ -335,6 +336,13 @@ cli
   .option('--json', 'Output JSON')
   .action((options: { json?: boolean }) => {
     return runCommand(() => doctorCommand(options), Boolean(options.json))
+  })
+
+cli
+  .command('telemetry <action>', 'Configure and inspect Codex skill usage telemetry')
+  .option('--json', 'Output JSON')
+  .action((action: string, options: { json?: boolean }) => {
+    return runCommand(() => telemetryCommand(action, options), Boolean(options.json))
   })
 
 cli

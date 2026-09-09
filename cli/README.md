@@ -35,6 +35,37 @@ skillhub publish ./my-skill --namespace myspace
 
 # Synchronize a team workspace
 skillhub sync pull --namespace myspace
+
+# Configure Codex skill usage collection
+skillhub telemetry setup
+```
+
+## 📊 Codex Skill Usage Collection
+
+Run `skillhub telemetry setup` once on each managed workstation, then review and
+trust the generated hooks from `/hooks` in Codex. The setup preserves existing
+hook configuration and creates `~/.codex/hooks.json.skillhub.bak` before changing
+an existing file.
+
+A skill is counted at most once per Codex user turn. The collector recognizes:
+
+- an explicit `$skill-name` invocation; or
+- execution of a file inside a SkillHub-installed skill's `scripts/` directory.
+
+Repeated reads, commands, and retries in the same turn do not increase the
+count. A later user message starts a new turn and can be counted again. Merely
+printing or mentioning a script path is not counted.
+
+The collector sends only the skill coordinate and version, client and evidence
+type, event time, and a one-way idempotency hash. It does not store or upload the
+prompt, conversation, command text, file contents, session id, or turn id.
+Network failures stay in `~/.skillhub/telemetry-outbox.json` and never block the
+Codex turn.
+
+```bash
+skillhub telemetry setup
+skillhub telemetry status
+skillhub telemetry flush
 ```
 
 ## 🌐 Registry Configuration

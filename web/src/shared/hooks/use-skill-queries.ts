@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import type { SkillSummary, SkillDetail, SkillVersion, SkillVersionDetail, SkillVersionCompare, SkillFile, SearchParams, PagedResponse, PublishResult } from '@/api/types'
+import type { SkillSummary, SkillDetail, SkillUsageStats, SkillVersion, SkillVersionDetail, SkillVersionCompare, SkillFile, SearchParams, PagedResponse, PublishResult } from '@/api/types'
 import { fetchJson, fetchText, getCsrfHeaders, skillLifecycleApi, WEB_API_PREFIX } from '@/api/client'
 import { clearDeletedSkillQueries } from '@/features/skill/skill-delete-flow'
 import { getSkillDetailQueryKey } from './query-keys'
@@ -14,6 +14,13 @@ async function searchSkills(params: SearchParams): Promise<PagedResponse<SkillSu
 async function getSkillDetail(namespace: string, slug: string): Promise<SkillDetail> {
   const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
   return fetchJson<SkillDetail>(`${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}`)
+}
+
+async function getSkillUsageStats(namespace: string, slug: string, days: number): Promise<SkillUsageStats> {
+  const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+  return fetchJson<SkillUsageStats>(
+    `${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/usage-stats?days=${days}`
+  )
 }
 
 async function getSkillVersions(namespace: string, slug: string): Promise<SkillVersion[]> {
@@ -76,6 +83,14 @@ export function useSkillDetail(namespace: string, slug: string, enabled = true) 
     queryFn: () => getSkillDetail(namespace, slug),
     enabled: enabled && !!namespace && !!slug,
     refetchOnMount: 'always',
+  })
+}
+
+export function useSkillUsageStats(namespace: string, slug: string, days = 30, enabled = true) {
+  return useQuery({
+    queryKey: ['skills', namespace, slug, 'usage-stats', days],
+    queryFn: () => getSkillUsageStats(namespace, slug, days),
+    enabled: enabled && !!namespace && !!slug,
   })
 }
 
