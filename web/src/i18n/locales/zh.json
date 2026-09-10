@@ -1483,6 +1483,15 @@
     "copyright": "© 2026 SkillHub. 保留所有权利。"
   },
   "publish": {
+    "labelsTitle": "标签（选填）",
+    "labelsHint": "选择已有标签；需要新标签请私下联系管理员添加。上传新版本时，所选标签会追加，原有标签保留。",
+    "labelsSearch": "搜索已有标签",
+    "labelsLoading": "正在加载标签…",
+    "labelsLoadError": "标签加载失败，可以重试或暂不选择标签。",
+    "labelsRetry": "重试",
+    "labelsEmpty": "暂无可选标签，需要添加请联系管理员。",
+    "labelsNoMatch": "没有匹配的标签，需要新标签请联系管理员。",
+    "labelsSelected": "已选 {{count}} 个标签",
     "title": "发布技能",
     "subtitle": "上传技能包到 SkillHub",
     "reviewNotice": {
@@ -1793,7 +1802,7 @@
   "type": "网页工具",
   "open": "打开工具",
   "unavailable": "网页入口在版本发布后可用；已归档资源不可打开。",
-  "uploadHint": "支持 Skill、网页和插件资源 ZIP。网页 README 声明“资源类型：网页”“使用入口：https://你的网址”。插件 ZIP 根目录放 README.md 和真实安装包，README 声明“资源类型：插件”“安装包：实际文件名”。整个上传包最多 100MB。插件安装包支持 ZIP、CRX、XPI、VSIX；须通过内部内容扫描。提示词 ZIP 放 README.md 和 PROMPT.md，README 声明“资源类型：提示词”，完整正文写在 PROMPT.md。"
+  "uploadHint": "支持 Skill、网页、插件和提示词资源，ZIP 包不超过 100MB。"
 },
   "pluginResource": {
   "type": "插件",

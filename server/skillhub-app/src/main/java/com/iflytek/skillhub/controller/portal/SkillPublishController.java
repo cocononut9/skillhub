@@ -12,6 +12,9 @@ import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.PublishResponse;
 import com.iflytek.skillhub.metrics.SkillHubMetrics;
 import com.iflytek.skillhub.ratelimit.RateLimit;
+import com.iflytek.skillhub.service.AuditRequestContext;
+import com.iflytek.skillhub.service.SkillPublishAppService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,11 +32,11 @@ import java.util.List;
 @RequestMapping({"/api/v1/skills", "/api/web/skills"})
 public class SkillPublishController extends BaseApiController {
 
-    private final SkillPublishService skillPublishService;
+    private final SkillPublishAppService skillPublishService;
     private final SkillPackageArchiveExtractor skillPackageArchiveExtractor;
     private final SkillHubMetrics skillHubMetrics;
 
-    public SkillPublishController(SkillPublishService skillPublishService,
+    public SkillPublishController(SkillPublishAppService skillPublishService,
                                   SkillPackageArchiveExtractor skillPackageArchiveExtractor,
                                   ApiResponseFactory responseFactory,
                                   SkillHubMetrics skillHubMetrics) {
@@ -54,7 +57,9 @@ public class SkillPublishController extends BaseApiController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("visibility") String visibility,
             @RequestParam(value = "confirmWarnings", defaultValue = "false") boolean confirmWarnings,
-            @AuthenticationPrincipal PlatformPrincipal principal) throws IOException {
+            @RequestParam(value = "labelSlugs", required = false) List<String> labelSlugs,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            HttpServletRequest httpRequest) throws IOException {
 
         SkillVisibility skillVisibility = SkillVisibility.valueOf(visibility.toUpperCase());
 
@@ -81,7 +86,9 @@ public class SkillPublishController extends BaseApiController {
                 principal.userId(),
                 skillVisibility,
                 principal.platformRoles(),
-                confirmWarnings
+                confirmWarnings,
+                labelSlugs,
+                AuditRequestContext.from(httpRequest)
         );
 
         PublishResponse response = new PublishResponse(

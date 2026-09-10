@@ -8295,6 +8295,7 @@ export interface operations {
             query: {
                 visibility: string;
                 confirmWarnings?: boolean;
+                labelSlugs?: string[];
             };
             header?: never;
             path: {
@@ -8327,6 +8328,7 @@ export interface operations {
             query: {
                 visibility: string;
                 confirmWarnings?: boolean;
+                labelSlugs?: string[];
             };
             header?: never;
             path: {

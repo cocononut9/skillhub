@@ -49,6 +49,24 @@ public class SkillLabelService {
         return skillLabelRepository.findByLabelId(labelId);
     }
 
+    /** Validates existing label selections before publication starts. Never creates definitions. */
+    public List<String> validatePublishLabels(List<String> labelSlugs, Set<String> platformRoles) {
+        if (labelSlugs == null || labelSlugs.isEmpty()) {
+            return List.of();
+        }
+        List<String> normalized = labelSlugs.stream().map(LabelSlugValidator::normalize).distinct().toList();
+        if (normalized.size() > maxLabelsPerSkill) {
+            throw new DomainBadRequestException("label.skill.too_many", "", maxLabelsPerSkill);
+        }
+        for (String slug : normalized) {
+            LabelDefinition definition = findLabel(slug);
+            if (definition.getType() == LabelType.PRIVILEGED && !platformRoles.contains("SUPER_ADMIN")) {
+                throw new DomainForbiddenException("label.skill.no_permission");
+            }
+        }
+        return normalized;
+    }
+
     @Transactional
     public SkillLabel attachLabel(Long skillId,
                                   String labelSlug,
@@ -59,12 +77,15 @@ public class SkillLabelService {
         LabelDefinition labelDefinition = findLabel(labelSlug);
         requireSkillLabelPermission(skill, labelDefinition, operatorId, userNamespaceRoles, platformRoles);
 
+        var existing = skillLabelRepository.findBySkillIdAndLabelId(skillId, labelDefinition.getId());
+        if (existing.isPresent()) {
+            return existing.get();
+        }
         List<SkillLabel> existingLabels = skillLabelRepository.findBySkillId(skillId);
         if (existingLabels.size() >= maxLabelsPerSkill) {
             throw new DomainBadRequestException("label.skill.too_many", skillId, maxLabelsPerSkill);
         }
-        return skillLabelRepository.findBySkillIdAndLabelId(skillId, labelDefinition.getId())
-                .orElseGet(() -> skillLabelRepository.save(new SkillLabel(skillId, labelDefinition.getId(), operatorId)));
+        return skillLabelRepository.save(new SkillLabel(skillId, labelDefinition.getId(), operatorId));
     }
 
     @Transactional

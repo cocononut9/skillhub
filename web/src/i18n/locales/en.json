@@ -1484,6 +1484,15 @@
     "copyright": "© 2026 SkillHub. All rights reserved."
   },
   "publish": {
+    "labelsTitle": "Labels (optional)",
+    "labelsHint": "Select existing labels. Contact an administrator privately to request new ones. When uploading an update, selected labels are added and existing labels are preserved.",
+    "labelsSearch": "Search existing labels",
+    "labelsLoading": "Loading labels…",
+    "labelsLoadError": "Labels could not be loaded. Retry or continue without selecting labels.",
+    "labelsRetry": "Retry",
+    "labelsEmpty": "No labels available. Contact an administrator to add one.",
+    "labelsNoMatch": "No matching labels. Contact an administrator to request a new one.",
+    "labelsSelected": "{{count}} labels selected",
     "title": "Publish Skill",
     "subtitle": "Upload skill package to SkillHub",
     "reviewNotice": {
@@ -1794,7 +1803,7 @@
   "type": "Website",
   "open": "Open tool",
   "unavailable": "The website link is available after publication and while the resource is active.",
-  "uploadHint": "Upload Skill, website or plugin ZIPs. Website README: 资源类型：网页 and 使用入口：https://your-url. Plugin ZIP: README.md plus the real installer; declare 资源类型：插件 and 安装包：filename in README. Total package limit: 100MB. Plugin installers: ZIP, CRX, XPI and VSIX; installer contents must pass scanning. For prompts, include README.md declaring 资源类型：提示词 and PROMPT.md containing the full prompt."
+  "uploadHint": "Supports skills, websites, plugins and prompts. ZIP packages must not exceed 100MB."
 },
   "pluginResource": {
   "type": "Plugin",

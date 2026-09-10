@@ -29,6 +29,7 @@ import { DashboardPageHeader } from '@/shared/components/dashboard-page-header'
 import { navigateAfterOverlays } from '@/shared/lib/navigate-after-overlays'
 import { toast } from '@/shared/lib/toast'
 import { ApiError } from '@/api/client'
+import { PublishLabelPicker } from '@/features/publish/publish-label-picker'
 
 const EMPTY_NAMESPACE_VALUE = '__select_namespace__'
 
@@ -43,6 +44,7 @@ export function PublishPage() {
   const [warningDialogOpen, setWarningDialogOpen] = useState(false)
   const [precheckWarnings, setPrecheckWarnings] = useState<string[]>([])
   const [isPackaging, setIsPackaging] = useState(false)
+  const [labelSlugs, setLabelSlugs] = useState<string[]>([])
 
   const { data: namespaces, isLoading: isLoadingNamespaces } = useMyNamespaces()
   const publishMutation = usePublishSkill()
@@ -92,6 +94,7 @@ export function PublishPage() {
         file: selectedFile,
         visibility,
         confirmWarnings,
+        labelSlugs,
       })
       setPrecheckWarnings([])
       setWarningDialogOpen(false)
@@ -255,6 +258,12 @@ export function PublishPage() {
             </div>
           )}
         </div>
+
+        <PublishLabelPicker
+          selected={labelSlugs}
+          onChange={setLabelSlugs}
+          disabled={publishMutation.isPending}
+        />
 
         <Button
           className="w-full text-primary-foreground disabled:text-primary-foreground"
