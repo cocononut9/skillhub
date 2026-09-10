@@ -4069,6 +4069,8 @@ export interface components {
             slug?: string;
             type?: string;
             displayName?: string;
+            /** @enum {string} */
+            category?: "GENERAL" | "WORKFLOW" | "ROLE";
         };
         ApiResponseMapStringInteger: {
             /** Format: int32 */
@@ -4222,6 +4224,8 @@ export interface components {
             /** Format: int32 */
             sortOrder?: number;
             translations: components["schemas"]["LabelTranslationItemRequest"][];
+            /** @enum {string} */
+            category?: "GENERAL" | "WORKFLOW" | "ROLE";
         };
         LabelTranslationItemRequest: {
             locale: string;
@@ -4245,6 +4249,8 @@ export interface components {
             translations?: components["schemas"]["LabelTranslationResponse"][];
             /** Format: date-time */
             createdAt?: string;
+            /** @enum {string} */
+            category?: "GENERAL" | "WORKFLOW" | "ROLE";
         };
         LabelTranslationResponse: {
             locale?: string;
@@ -4748,6 +4754,8 @@ export interface components {
             /** Format: int32 */
             sortOrder?: number;
             translations: components["schemas"]["LabelTranslationItemRequest"][];
+            /** @enum {string} */
+            category?: "GENERAL" | "WORKFLOW" | "ROLE";
         };
         MergeVerifyRequest: {
             /** Format: int64 */
@@ -10850,6 +10858,8 @@ export interface operations {
                 namespace?: string;
                 resourceType?: "SKILL" | "WEB" | "PLUGIN" | "PROMPT";
                 label?: string[];
+                /** @description ANY matches any label; ALL requires every selected label */
+                labelMode?: "ANY" | "ALL";
                 /** @description Optional response expansions. Supported value: labels */
                 include?: string[];
                 sort?: string;
@@ -12448,6 +12458,7 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                include?: string[];
             };
             header?: never;
             path?: never;
@@ -12471,6 +12482,7 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                include?: string[];
             };
             header?: never;
             path?: never;

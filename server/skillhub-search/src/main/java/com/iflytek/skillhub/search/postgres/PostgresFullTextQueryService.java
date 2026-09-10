@@ -149,6 +149,9 @@ public class PostgresFullTextQueryService implements SearchQueryService {
             sql.append("SELECT sl.skill_id FROM skill_label sl ");
             sql.append("JOIN label_definition ld ON ld.id = sl.label_id ");
             sql.append("WHERE LOWER(ld.slug) IN :labelSlugs");
+            if (query.labelMode() == com.iflytek.skillhub.search.LabelMatchMode.ALL) {
+                sql.append(" GROUP BY sl.skill_id HAVING COUNT(DISTINCT LOWER(ld.slug)) = :labelCount");
+            }
             sql.append(") ");
         }
 
@@ -211,6 +214,9 @@ public class PostgresFullTextQueryService implements SearchQueryService {
 
         if (query.labelSlugs() != null && !query.labelSlugs().isEmpty()) {
             nativeQuery.setParameter("labelSlugs", query.labelSlugs());
+            if (query.labelMode() == com.iflytek.skillhub.search.LabelMatchMode.ALL) {
+                nativeQuery.setParameter("labelCount", query.labelSlugs().stream().distinct().count());
+            }
         }
 
         if (hasKeyword) {
@@ -259,6 +265,9 @@ public class PostgresFullTextQueryService implements SearchQueryService {
 
         if (query.labelSlugs() != null && !query.labelSlugs().isEmpty()) {
             countQuery.setParameter("labelSlugs", query.labelSlugs());
+            if (query.labelMode() == com.iflytek.skillhub.search.LabelMatchMode.ALL) {
+                countQuery.setParameter("labelCount", query.labelSlugs().stream().distinct().count());
+            }
         }
 
         if (hasKeyword) {

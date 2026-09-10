@@ -15,8 +15,12 @@ export function buildSkillSearchUrl(params: SearchParams) {
     queryParams.append('namespace', cleanNamespace)
   }
 
-  if (params.label) {
-    queryParams.append('label', params.label)
+  const labels = [...new Set([params.label, params.workflow, params.role].filter((slug): slug is string => !!slug))]
+  for (const slug of labels) {
+    queryParams.append('label', slug)
+  }
+  if (params.workflow || params.role) {
+    queryParams.append('labelMode', 'ALL')
   }
 
   if (params.resourceType) {

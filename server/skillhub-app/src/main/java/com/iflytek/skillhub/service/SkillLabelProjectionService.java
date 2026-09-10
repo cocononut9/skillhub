@@ -88,7 +88,8 @@ public class SkillLabelProjectionService {
                 definition.getType().name(),
                 labelLocalizationService.resolveDisplayName(
                         definition.getSlug(),
-                        translationsByLabelId.getOrDefault(definition.getId(), List.of()))
+                        translationsByLabelId.getOrDefault(definition.getId(), List.of())),
+                definition.getCategory()
         );
     }
 }

@@ -13,6 +13,7 @@ import com.iflytek.skillhub.domain.user.UserAccount;
 import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
 import com.iflytek.skillhub.search.SearchQuery;
+import com.iflytek.skillhub.search.LabelMatchMode;
 import com.iflytek.skillhub.search.SearchQueryService;
 import com.iflytek.skillhub.search.SearchResult;
 import com.iflytek.skillhub.search.SearchVisibilityScope;
@@ -124,11 +125,20 @@ public class SkillSearchAppService {
             Map<Long, NamespaceRole> userNsRoles,
             ResourceType resourceType) {
 
+        return search(keyword, namespaceSlug, sortBy, page, size, labelSlugs, userId, userNsRoles,
+                resourceType, LabelMatchMode.ANY);
+    }
+
+    public SearchResponse search(
+            String keyword, String namespaceSlug, String sortBy, int page, int size,
+            List<String> labelSlugs, String userId, Map<Long, NamespaceRole> userNsRoles,
+            ResourceType resourceType, LabelMatchMode labelMode) {
+
         Long namespaceId = resolveNamespaceId(namespaceSlug, userId, userNsRoles);
 
         SearchVisibilityScope scope = buildVisibilityScope(userId, userNsRoles);
 
-        return searchVisibleSkills(keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, labelSlugs, scope, false, resourceType);
+        return searchVisibleSkills(keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, labelSlugs, scope, false, resourceType, labelMode);
     }
 
     public SearchResponse searchInstallableLatest(
@@ -141,7 +151,7 @@ public class SkillSearchAppService {
             Map<Long, NamespaceRole> userNsRoles) {
         Long namespaceId = resolveNamespaceId(namespaceSlug, userId, userNsRoles);
         SearchVisibilityScope scope = buildVisibilityScope(userId, userNsRoles);
-        return searchVisibleSkills(keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, List.of(), scope, true, null);
+        return searchVisibleSkills(keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, List.of(), scope, true, null, LabelMatchMode.ANY);
     }
 
     private Long resolveNamespaceId(String namespaceSlug, String userId, Map<Long, NamespaceRole> userNsRoles) {
@@ -191,7 +201,8 @@ public class SkillSearchAppService {
             List<String> labelSlugs,
             SearchVisibilityScope scope,
             boolean requireInstallableLatest,
-            ResourceType resourceType) {
+            ResourceType resourceType,
+            LabelMatchMode labelMode) {
         SearchResult result = searchQueryService.search(new SearchQuery(
                 keyword,
                 namespaceId,
@@ -201,7 +212,8 @@ public class SkillSearchAppService {
                 size,
                 normalizeLabelSlugs(labelSlugs),
                 requireInstallableLatest,
-                resourceType
+                resourceType,
+                labelMode
         ));
         List<SkillSummaryResponse> pageItems = mapVisibleSkillSummaries(result.skillIds());
         return new SearchResponse(pageItems, result.total(), page, size);

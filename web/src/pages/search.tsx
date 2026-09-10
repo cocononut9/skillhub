@@ -2,9 +2,10 @@ import { startTransition, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
-import type { ResourceType, SkillSummary } from '@/api/types'
+import type { LabelCategory, ResourceType, SkillSummary } from '@/api/types'
 import { useAuth } from '@/features/auth/use-auth'
 import { SearchBar } from '@/features/search/search-bar'
+import { LabelFilterGroups } from '@/features/search/label-filter-groups'
 import { SkillCard } from '@/features/skill/skill-card'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { EmptyState } from '@/shared/components/empty-state'
@@ -63,11 +64,14 @@ function scrollToTopOnPageChange() {
  * Search text, sorting, pagination, and the starred-only filter are mirrored into router search
  * params so the page can be shared, restored, and revisited without losing state.
  */
-function filterStarredSkills(skills: SkillSummary[], query: string, namespace: string, resourceType?: ResourceType): SkillSummary[] {
+function filterStarredSkills(skills: SkillSummary[], query: string, namespace: string, resourceType?: ResourceType, labelSlugs: string[] = []): SkillSummary[] {
   const normalizedQuery = query.trim().toLowerCase()
   const normalizedNamespace = namespace.trim().toLowerCase()
 
   return skills.filter((skill) => {
+    if (!labelSlugs.every((slug) => skill.labels?.some((label) => label.slug === slug))) {
+      return false
+    }
     if (resourceType && (skill.resourceType ?? 'SKILL') !== resourceType) {
       return false
     }
@@ -103,7 +107,13 @@ export function SearchPage() {
 
   const q = normalizeSearchQuery(searchParams.q || '')
   const namespace = (searchParams.namespace || '').replace(/^@/, '')
-  const selectedLabel = searchParams.label || ''
+  const { data: labels } = useVisibleLabels()
+  // Preserve old shared links while moving a known label into its business group.
+  const legacyLabel = searchParams.label || ''
+  const legacyCategory = labels?.find((label) => label.slug === legacyLabel)?.category ?? 'GENERAL'
+  const selectedLabel = legacyCategory === 'GENERAL' ? legacyLabel : ''
+  const selectedWorkflow = searchParams.workflow || (legacyCategory === 'WORKFLOW' ? legacyLabel : '')
+  const selectedRole = searchParams.role || (legacyCategory === 'ROLE' ? legacyLabel : '')
   const resourceType = searchParams.resourceType
   const sort = searchParams.sort || 'newest'
   const page = searchParams.page ?? 0
@@ -134,12 +144,13 @@ export function SearchPage() {
     q,
     namespace: namespace || undefined,
     label: selectedLabel || undefined,
+    workflow: selectedWorkflow || undefined,
+    role: selectedRole || undefined,
     sort,
     page,
     size: PAGE_SIZE,
     starredOnly,
   })
-  const { data: labels } = useVisibleLabels()
   const {
     data: starredSkills,
     isLoading: isLoadingStarred,
@@ -155,44 +166,54 @@ export function SearchPage() {
 
     if (!parsedInput.query && !parsedInput.namespace) {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: '', namespace: '', label: selectedLabel, resourceType, sort, page: 0, starredOnly }, replace: page === 0 })
+        navigate({ to: '/search', search: { q: '', namespace: '', label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly }, replace: page === 0 })
       })
       return
     }
 
     const timeoutId = window.setTimeout(() => {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, resourceType, sort, page: 0, starredOnly }, replace: true })
+        navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly }, replace: true })
       })
     }, 250)
 
     return () => window.clearTimeout(timeoutId)
-  }, [navigate, namespace, page, q, queryInput, selectedLabel, resourceType, sort, starredOnly])
+  }, [navigate, namespace, page, q, queryInput, selectedLabel, selectedWorkflow, selectedRole, resourceType, sort, starredOnly])
 
   const handleSearch = (query: string) => {
     const parsedInput = parseNamespaceSearchInput(query)
     setQueryInput(query)
     startTransition(() => {
-      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, resourceType, sort, page: 0, starredOnly }, replace: true })
+      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly }, replace: true })
     })
   }
 
   const handleSortChange = (newSort: string) => {
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, resourceType, sort: newSort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort: newSort, page: 0, starredOnly } })
   }
 
   const handlePageChange = (newPage: number) => {
     blurActiveElement()
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, resourceType, sort, page: newPage, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: newPage, starredOnly } })
   }
 
-  const handleLabelToggle = (label: string) => {
-    const nextLabel = selectedLabel === label ? '' : label
-    navigate({ to: '/search', search: { q, namespace, label: nextLabel, resourceType, sort, page: 0, starredOnly } })
+  const handleLabelToggle = (category: LabelCategory, slug: string) => {
+    const current = category === 'WORKFLOW' ? selectedWorkflow : category === 'ROLE' ? selectedRole : selectedLabel
+    const next = current === slug ? '' : slug
+    navigate({ to: '/search', search: {
+      q, namespace, resourceType, sort, page: 0, starredOnly,
+      label: category === 'GENERAL' ? next : selectedLabel,
+      workflow: (category === 'WORKFLOW' ? next : selectedWorkflow) || undefined,
+      role: (category === 'ROLE' ? next : selectedRole) || undefined,
+    } })
+  }
+
+  const handleClearLabels = () => {
+    navigate({ to: '/search', search: { q, namespace, resourceType, sort, page: 0, starredOnly } })
   }
 
   const handleNamespaceClear = () => {
-    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, resourceType, sort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly } })
   }
 
   const handleStarredToggle = () => {
@@ -206,7 +227,7 @@ export function SearchPage() {
       return
     }
 
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, resourceType, sort, page: 0, starredOnly: !starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly: !starredOnly } })
   }
 
   const handleSkillClick = (namespace: string, slug: string) => {
@@ -217,7 +238,7 @@ export function SearchPage() {
   }
 
   const filteredStarredSkills = starredOnly
-    ? sortStarredSkills(filterStarredSkills(starredSkills ?? [], q, namespace, resourceType), sort)
+    ? sortStarredSkills(filterStarredSkills(starredSkills ?? [], q, namespace, resourceType, [selectedLabel, selectedWorkflow, selectedRole].filter(Boolean)), sort)
     : []
   const starredPageItems = starredOnly
     ? filteredStarredSkills.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -255,7 +276,7 @@ export function SearchPage() {
               size="sm"
               className="whitespace-nowrap"
               aria-pressed={resourceType === type.value}
-              onClick={() => navigate({ to: '/search', search: { q, namespace, label: selectedLabel, resourceType: type.value, sort, page: 0, starredOnly } })}
+              onClick={() => navigate({ to: '/search', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType: type.value, sort, page: 0, starredOnly } })}
             >
               {t(type.label)}
             </Button>
@@ -303,25 +324,22 @@ export function SearchPage() {
           </div>
         ) : null}
 
+        <LabelFilterGroups
+          labels={labels ?? []}
+          selected={{ WORKFLOW: selectedWorkflow, ROLE: selectedRole, GENERAL: selectedLabel }}
+          onSelect={handleLabelToggle}
+        />
+
         <div className="flex flex-wrap items-center gap-2">
-          <span className="shrink-0 text-sm font-medium text-muted-foreground">{t('search.filters.label')}</span>
+          <span className="shrink-0 text-sm font-medium text-muted-foreground">{t('search.otherFilters')}</span>
           <Button
             variant={starredOnly ? 'default' : 'outline'}
             size="sm"
+            aria-pressed={starredOnly}
             onClick={handleStarredToggle}
           >
             {t('search.filterStarred')}
           </Button>
-          {!starredOnly && labels?.map((label) => (
-            <Button
-              key={label.slug}
-              variant={selectedLabel === label.slug ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleLabelToggle(label.slug)}
-            >
-              {label.displayName}
-            </Button>
-          ))}
           {namespace ? (
             <Button
               variant="default"
@@ -359,14 +377,19 @@ export function SearchPage() {
           )}
         </>
       ) : (
-        <EmptyState
-          title={starredOnly ? t('search.noStarredResults') : t('search.noResults')}
-          description={
-            starredOnly
-              ? (q ? t('search.noStarredResultsFor', { q }) : t('search.noStarredSkills'))
-              : (q ? t('search.noResultsFor', { q }) : undefined)
-          }
-        />
+        <div className="space-y-4 text-center">
+          <EmptyState
+            title={starredOnly ? t('search.noStarredResults') : t('search.noResults')}
+            description={
+              starredOnly
+                ? (q ? t('search.noStarredResultsFor', { q }) : t('search.noStarredSkills'))
+                : (q ? t('search.noResultsFor', { q }) : undefined)
+            }
+          />
+          {(selectedLabel || selectedWorkflow || selectedRole) && (
+            <Button variant="outline" onClick={handleClearLabels}>{t('search.clearLabels')}</Button>
+          )}
+        </div>
       )}
     </div>
   )

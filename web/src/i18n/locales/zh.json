@@ -1,4 +1,5 @@
 {
+  "labelCategories": {"WORKFLOW":"流程标签","ROLE":"岗位标签","GENERAL":"其他标签"},
   "demand": {
     "square": "需求广场",
     "intro": "说出业务中的问题，让相同需求被看见。",
@@ -234,6 +235,9 @@
     }
   },
   "search": {
+    "allLabels": "全部",
+    "otherFilters": "其他条件",
+    "clearLabels": "清除标签筛选",
     "resourceType": "资源类型",
     "allResourceTypes": "全部",
     "skillType": "Skill",
@@ -718,6 +722,7 @@
     "confirmResetPassword": "确定给用户 {{username}} 发送密码重置验证码吗？"
   },
   "adminLabels": {
+    "formCategory": "分类归属",
     "title": "标签管理",
     "subtitle": "管理标签定义、筛选可见性、多语言翻译和排序。",
     "createAction": "新建标签",

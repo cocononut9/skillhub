@@ -219,9 +219,11 @@ clean: ## 清理构建产物
 	$(DEV_COMPOSE) down -v
 	rm -rf $(DEV_DIR)
 
-generate-api: ## 生成 OpenAPI 类型（前端用）
+OPENAPI_SOURCE ?= http://localhost:8080/v3/api-docs
+
+generate-api: ## 生成 OpenAPI 类型（前端用，可指定 OPENAPI_SOURCE）
 	@echo "Generating OpenAPI types..."
-	cd web && pnpm run generate-api
+	cd web && pnpm exec openapi-typescript "$(OPENAPI_SOURCE)" -o src/api/generated/schema.d.ts
 
 web-install: ## 安装前端依赖
 	cd web && pnpm install

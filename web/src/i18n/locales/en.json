@@ -1,4 +1,5 @@
 {
+  "labelCategories": {"WORKFLOW":"Workflow labels","ROLE":"Role labels","GENERAL":"Other labels"},
   "demand": {
     "square": "Demand square",
     "intro": "Share a business problem and discover who else needs a solution.",
@@ -234,6 +235,9 @@
     }
   },
   "search": {
+    "allLabels": "All",
+    "otherFilters": "Other filters",
+    "clearLabels": "Clear label filters",
     "resourceType": "Resource type",
     "allResourceTypes": "All",
     "skillType": "Skill",
@@ -718,6 +722,7 @@
     "confirmResetPassword": "Send password reset verification code to user {{username}}?"
   },
   "adminLabels": {
+    "formCategory": "Business category",
     "title": "Label Management",
     "subtitle": "Manage label definitions, visibility, translations, and filter ordering.",
     "createAction": "Create Label",

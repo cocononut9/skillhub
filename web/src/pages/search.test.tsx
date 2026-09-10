@@ -102,6 +102,9 @@ vi.mock('@/shared/hooks/use-label-queries', () => ({
     data: [
       { slug: 'code-generation', type: 'RECOMMENDED', displayName: 'Code Generation' },
       { slug: 'official', type: 'RECOMMENDED', displayName: 'Official' },
+      { slug: 'marketing', type: 'RECOMMENDED', category: 'WORKFLOW', displayName: '品牌营销' },
+      { slug: 'research', type: 'RECOMMENDED', category: 'WORKFLOW', displayName: '市场洞察' },
+      { slug: 'brand-specialist', type: 'RECOMMENDED', category: 'ROLE', displayName: '品牌专员' },
     ],
   }),
 }))
@@ -121,6 +124,71 @@ function findButton(label: string) {
 }
 
 describe('SearchPage', () => {
+  it('selects one workflow while preserving the role and other filters', () => {
+    useSearchMock.mockReturnValue({ q: 'report', namespace: 'global', workflow: 'research', role: 'brand-specialist',
+      resourceType: 'WEB', sort: 'downloads', page: 2, starredOnly: true })
+    renderToStaticMarkup(<SearchPage />)
+    findButton('品牌营销').onClick?.()
+    expect(navigateMock.mock.lastCall?.[0].search).toEqual({
+      q: 'report', namespace: 'global', label: '', workflow: 'marketing', role: 'brand-specialist',
+      resourceType: 'WEB', sort: 'downloads', page: 0, starredOnly: true,
+    })
+    expect(findButton('品牌专员').variant).toBe('default')
+  })
+
+  it('restores groups from the URL and preserves both through navigation', () => {
+    useSearchMock.mockReturnValue({ q: 'report', workflow: 'marketing', role: 'brand-specialist',
+      resourceType: 'WEB', sort: 'newest', page: 0 })
+    renderToStaticMarkup(<SearchPage />)
+    expect(findButton('品牌营销').variant).toBe('default')
+    expect(findButton('品牌专员').variant).toBe('default')
+    expect(searchSkillParams[0]).toMatchObject({ workflow: 'marketing', role: 'brand-specialist' })
+    paginationProps[0]?.onPageChange(1)
+    findButton('search.sort.downloads').onClick?.()
+    searchBarProps[0]?.onSearch?.('new query')
+    findButton('search.filterStarred').onClick?.()
+    findButton('promptResource.type').onClick?.()
+    for (const [navigation] of navigateMock.mock.calls) {
+      expect(navigation.search).toMatchObject({ workflow: 'marketing', role: 'brand-specialist' })
+    }
+  })
+
+  it('supports old role-label URLs without adding a hidden second role', () => {
+    useSearchMock.mockReturnValue({ label: 'brand-specialist', page: 0 })
+    renderToStaticMarkup(<SearchPage />)
+    expect(findButton('品牌专员').variant).toBe('default')
+    expect(searchSkillParams[0]).toMatchObject({ label: undefined, role: 'brand-specialist' })
+    findButton('品牌专员').onClick?.()
+    expect(navigateMock.mock.lastCall?.[0].search).toMatchObject({ label: '', role: undefined, page: 0 })
+  })
+
+  it('intersects both label groups and resource type before paginating starred resources', () => {
+    useSearchMock.mockReturnValue({ q: 'report', workflow: 'marketing', role: 'brand-specialist',
+      resourceType: 'WEB', page: 1, sort: 'newest', starredOnly: true })
+    useMyStarsMock.mockReturnValue({ data: Array.from({ length: 30 }, (_, id) => ({
+      id, displayName: 'report', namespace: 'global', slug: 'report-' + id, resourceType: id === 29 ? 'PLUGIN' : 'WEB',
+      updatedAt: '2026-09-10T00:00:00Z',
+      labels: id < 13 || id === 29 ? [{ slug: 'marketing' }, { slug: 'brand-specialist' }] : [{ slug: 'brand-specialist' }],
+    })), isLoading: false, isFetching: false })
+    const html = renderToStaticMarkup(<SearchPage />)
+    expect(html).toContain('search.results:13')
+    expect(html.match(/skill-card/g)).toHaveLength(1)
+    expect(html).toContain('品牌营销')
+    expect(html).toContain('品牌专员')
+    expect(paginationProps).toHaveLength(1)
+  })
+
+  it('shows a missing saved label and allows clearing labels without clearing other filters', () => {
+    useSearchMock.mockReturnValue({ workflow: 'removed', role: 'brand-specialist', q: 'report',
+      resourceType: 'WEB', starredOnly: true, page: 0 })
+    const html = renderToStaticMarkup(<SearchPage />)
+    expect(html).toContain('removed')
+    findButton('search.clearLabels').onClick?.()
+    expect(navigateMock.mock.lastCall?.[0].search).toEqual({
+      q: 'report', namespace: '', resourceType: 'WEB', starredOnly: true, sort: 'newest', page: 0,
+    })
+  })
+
   beforeEach(() => {
     navigateMock.mockReset()
     buttonRecords.length = 0

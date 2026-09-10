@@ -57,6 +57,7 @@ public class LabelAdminAppService {
         LabelDefinition labelDefinition = labelDefinitionService.create(
                 request.slug(),
                 request.type(),
+                request.category(),
                 request.visibleInFilter(),
                 request.sortOrder(),
                 toTranslations(request.translations()),
@@ -80,6 +81,7 @@ public class LabelAdminAppService {
         LabelDefinition updated = labelDefinitionService.update(
                 slug,
                 request.type(),
+                request.category(),
                 request.visibleInFilter(),
                 request.sortOrder(),
                 toTranslations(request.translations()),
@@ -139,7 +141,8 @@ public class LabelAdminAppService {
                 labelDefinition.isVisibleInFilter(),
                 labelDefinition.getSortOrder(),
                 translations,
-                labelDefinition.getCreatedAt()
+                labelDefinition.getCreatedAt(),
+                labelDefinition.getCategory()
         );
     }
 

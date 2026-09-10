@@ -1,4 +1,5 @@
 {
+  "labelCategories": {"WORKFLOW":"Этапы работы","ROLE":"Должности","GENERAL":"Другие метки"},
   "demand": {
     "square": "Площадка запросов",
     "intro": "Расскажите о рабочей задаче и узнайте, кому ещё нужно решение.",
@@ -234,6 +235,9 @@
     }
   },
   "search": {
+    "allLabels": "Все",
+    "otherFilters": "Другие фильтры",
+    "clearLabels": "Сбросить метки",
     "resourceType": "Тип ресурса",
     "allResourceTypes": "Все",
     "skillType": "Skill",
@@ -783,6 +787,7 @@
     "confirmResetPassword": "Отправить код подтверждения сброса пароля пользователю {{username}}?"
   },
   "adminLabels": {
+    "formCategory": "Категория",
     "title": "Управление метками",
     "subtitle": "Управление определениями меток, видимостью, переводами и порядком в фильтрах.",
     "createAction": "Создать метку",

@@ -30,6 +30,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SkillSearchControllerTest {
 
     @Test
+    void groupedFiltersUseAllLabelsWithResourceTypeAndPagination() throws Exception {
+        when(skillSearchAppService.search(eq("report"), eq("global"), eq("downloads"), eq(1), eq(12),
+                eq(List.of("marketing", "brand")), any(), any(),
+                eq(com.iflytek.skillhub.domain.skill.ResourceType.WEB),
+                eq(com.iflytek.skillhub.search.LabelMatchMode.ALL)))
+                .thenReturn(new SkillSearchAppService.SearchResponse(List.of(), 0, 1, 12));
+        mockMvc.perform(get("/api/web/skills").param("q", "report").param("namespace", "global")
+                        .param("sort", "downloads").param("page", "1").param("size", "12")
+                        .param("resourceType", "WEB").param("label", "marketing", "brand").param("labelMode", "ALL"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.page").value(1));
+    }
+
+    @Test
+    void rejectsUnknownLabelMatchMode() throws Exception {
+        mockMvc.perform(get("/api/web/skills").param("labelMode", "UNKNOWN"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(skillSearchAppService);
+    }
+
+    @Test
     void searchShouldPassResourceTypeWithOtherFilters() throws Exception {
         when(skillSearchAppService.search(eq("review"), eq("global"), eq("downloads"), eq(1), eq(12),
                 eq(List.of("official")), any(), any(), eq(com.iflytek.skillhub.domain.skill.ResourceType.WEB)))

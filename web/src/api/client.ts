@@ -594,6 +594,7 @@ export const labelApi = {
       body: JSON.stringify({
         slug: request.slug.trim(),
         type: request.type,
+        category: request.category,
         visibleInFilter: request.visibleInFilter,
         sortOrder: request.sortOrder,
         translations: request.translations.map((translation) => ({
@@ -612,6 +613,7 @@ export const labelApi = {
       }),
       body: JSON.stringify({
         type: request.type,
+        category: request.category,
         visibleInFilter: request.visibleInFilter,
         sortOrder: request.sortOrder,
         translations: request.translations.map((translation) => ({
@@ -1087,6 +1089,7 @@ export const meApi = {
 
   async getStarsPage(params?: { page?: number; size?: number }): Promise<{ items: SkillSummary[]; total: number; page: number; size: number }> {
     const searchParams = new URLSearchParams()
+    searchParams.set('include', 'labels')
     searchParams.set('page', String(params?.page ?? 0))
     searchParams.set('size', String(params?.size ?? 12))
     return fetchJson<{ items: SkillSummary[]; total: number; page: number; size: number }>(`${WEB_API_PREFIX}/me/stars?${searchParams.toString()}`)

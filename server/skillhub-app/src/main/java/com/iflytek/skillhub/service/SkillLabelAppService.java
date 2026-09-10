@@ -151,7 +151,8 @@ public class SkillLabelAppService {
                             definition.getType().name(),
                             labelLocalizationService.resolveDisplayName(
                                     definition.getSlug(),
-                                    translationsByLabelId.getOrDefault(definition.getId(), List.of()))
+                                    translationsByLabelId.getOrDefault(definition.getId(), List.of())),
+                            definition.getCategory()
                     );
                 })
                 .sorted(java.util.Comparator.comparing(SkillLabelDto::type).thenComparing(SkillLabelDto::slug))

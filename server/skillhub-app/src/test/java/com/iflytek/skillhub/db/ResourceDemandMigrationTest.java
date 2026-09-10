@@ -34,7 +34,7 @@ class ResourceDemandMigrationTest {
                 assertThat(result.getInt(1)).isEqualTo(-72597489);
             }
             var integrated = Flyway.configure().dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                    .locations("classpath:db/migration").load();
+                    .locations("classpath:db/migration").target("53").load();
             assertThat(integrated.migrate().migrationsExecuted).isEqualTo(2);
             integrated.validate();
             assertThat(integrated.migrate().migrationsExecuted).isZero();

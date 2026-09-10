@@ -78,10 +78,54 @@ class PublishLabelsIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         var operation = mapper.readTree(body).path("paths").path("/api/web/skills/{namespace}/publish").path("post");
         assertThat(operation.toString()).contains("labelSlugs");
+        assertThat(mapper.readTree(body).path("components").path("schemas").path("SkillLabelDto")
+                .path("properties").path("category").toString()).contains("WORKFLOW", "ROLE", "GENERAL");
         String output = System.getProperty("skillhub.openapi.output");
         if (output != null) {
             java.nio.file.Files.writeString(java.nio.file.Path.of(output), body, StandardCharsets.UTF_8);
         }
+    }
+
+    @Test
+    void categoriesRoundTripAndLegacyUpdatesPreserveGrouping() throws Exception {
+        String slug = "workflow-" + UUID.randomUUID();
+        mvc.perform(post("/api/v1/admin/labels").with(asUser(admin, true)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"slug":"%s","type":"RECOMMENDED","category":"WORKFLOW",
+                                 "visibleInFilter":true,"sortOrder":0,
+                                 "translations":[{"locale":"zh","displayName":"品牌营销"}]}
+                                """.formatted(slug)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.category").value("WORKFLOW"));
+        long id = upload("1.0.0", slug, ordinary);
+        assertThat(labelApp.listSkillLabelsBySkillId(id)).filteredOn("slug", slug)
+                .extracting("category").containsExactly(LabelCategory.WORKFLOW);
+        mvc.perform(put("/api/v1/admin/labels/" + slug).with(asUser(admin, true)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"type":"RECOMMENDED","visibleInFilter":true,"sortOrder":0,
+                                 "translations":[{"locale":"zh","displayName":"市场洞察"}]}
+                                """))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.category").value("WORKFLOW"));
+        mvc.perform(put("/api/v1/admin/labels/" + slug).with(asUser(admin, true)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"type":"RECOMMENDED","category":"ROLE","visibleInFilter":true,"sortOrder":0,
+                                 "translations":[{"locale":"zh","displayName":"品牌专员"}]}
+                                """))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.category").value("ROLE"));
+        assertThat(labels.listSkillLabels(id)).hasSize(2);
+        mvc.perform(get("/api/web/labels").header("Accept-Language", "zh"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.slug == '%s')].category".formatted(slug)).value("ROLE"));
+    }
+
+    @Test
+    void invalidCategoryIsRejectedWithoutCreatingLabel() throws Exception {
+        mvc.perform(post("/api/v1/admin/labels").with(asUser(admin, true)).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"slug":"invalid-category","type":"RECOMMENDED","category":"DEPARTMENT",
+                                 "visibleInFilter":true,"sortOrder":0,
+                                 "translations":[{"locale":"zh","displayName":"测试"}]}
+                                """))
+                .andExpect(status().isBadRequest());
     }
 
     @BeforeEach

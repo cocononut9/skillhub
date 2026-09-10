@@ -196,6 +196,7 @@ export interface BatchMemberResponse {
 
 // Skill types
 export interface SkillSummary {
+  labels?: LabelItem[]
   resourceType?: components['schemas']['SkillSummaryResponse']['resourceType']
   id: number
   slug: string
@@ -219,8 +220,11 @@ export interface SkillSummary {
   complianceSnapshot?: ComplianceSnapshot
 }
 
+export type LabelCategory = NonNullable<components['schemas']['SkillLabelDto']['category']>
+
 export type LabelItem = Omit<components['schemas']['SkillLabelDto'], 'slug' | 'type' | 'displayName'> & {
   slug: string
+  category?: LabelCategory
   type: 'RECOMMENDED' | 'PRIVILEGED' | string
   displayName: string
 }
@@ -243,6 +247,7 @@ export type LabelDefinition = Omit<
 
 export interface AdminLabelInput {
   slug: string
+  category?: LabelCategory
   type: 'RECOMMENDED' | 'PRIVILEGED'
   visibleInFilter: boolean
   sortOrder: number
@@ -409,6 +414,8 @@ export interface SearchParams {
   q?: string
   namespace?: string
   label?: string
+  workflow?: string
+  role?: string
   sort?: string
   page?: number
   size?: number

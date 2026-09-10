@@ -2,6 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { buildSkillSearchUrl, shouldEnableNamespaceMemberCandidates } from './skill-query-helpers'
 
 describe('buildSkillSearchUrl', () => {
+  it('sends both business groups as distinct labels with ALL matching', () => {
+    const url = new URL(buildSkillSearchUrl({ q: 'report', namespace: 'team', workflow: 'marketing',
+      role: 'brand', resourceType: 'WEB', page: 2, size: 12 }), 'https://example.test')
+    expect(url.searchParams.getAll('label')).toEqual(['marketing', 'brand'])
+    expect(url.searchParams.get('labelMode')).toBe('ALL')
+    expect(url.searchParams.get('resourceType')).toBe('WEB')
+    expect(url.searchParams.get('page')).toBe('2')
+  })
+
+  it('deduplicates legacy and grouped labels', () => {
+    const url = new URL(buildSkillSearchUrl({ label: 'brand', role: 'brand' }), 'https://example.test')
+    expect(url.searchParams.getAll('label')).toEqual(['brand'])
+    expect(url.searchParams.get('labelMode')).toBe('ALL')
+  })
   it('combines a resource type with keyword, label and pagination', () => {
     const url = new URL(buildSkillSearchUrl({ q: '报告', label: 'official', resourceType: 'WEB', page: 2, size: 12 }), 'https://example.test')
     expect(Object.fromEntries(url.searchParams)).toEqual({ q: '报告', label: 'official', resourceType: 'WEB', page: '2', size: '12' })

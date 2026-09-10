@@ -15,8 +15,16 @@ public record SearchQuery(
         int size,
         List<String> labelSlugs,
         boolean requireInstallableLatest,
-        ResourceType resourceType
+        ResourceType resourceType,
+        LabelMatchMode labelMode
 ) {
+    public SearchQuery(String keyword, Long namespaceId, SearchVisibilityScope visibilityScope,
+                       String sortBy, int page, int size, List<String> labelSlugs,
+                       boolean requireInstallableLatest, ResourceType resourceType) {
+        this(keyword, namespaceId, visibilityScope, sortBy, page, size, labelSlugs,
+                requireInstallableLatest, resourceType, LabelMatchMode.ANY);
+    }
+
     public SearchQuery(
             String keyword,
             Long namespaceId,

@@ -60,6 +60,18 @@ public class LabelDefinitionService {
                                   List<LabelTranslation> translations,
                                   String operatorId,
                                   Set<String> platformRoles) {
+        return create(slug, type, LabelCategory.GENERAL, visibleInFilter, sortOrder, translations, operatorId, platformRoles);
+    }
+
+    @Transactional
+    public LabelDefinition create(String slug,
+                                  LabelType type,
+                                  LabelCategory category,
+                                  boolean visibleInFilter,
+                                  int sortOrder,
+                                  List<LabelTranslation> translations,
+                                  String operatorId,
+                                  Set<String> platformRoles) {
         requireDefinitionAdmin(platformRoles);
         String normalizedSlug = LabelSlugValidator.normalize(slug);
         List<LabelTranslation> normalizedTranslations = normalizeTranslations(translations);
@@ -70,9 +82,9 @@ public class LabelDefinitionService {
             throw new DomainBadRequestException("label.slug.duplicate", normalizedSlug);
         }
         try {
-            LabelDefinition labelDefinition = labelDefinitionRepository.save(
-                    new LabelDefinition(normalizedSlug, type, visibleInFilter, sortOrder, operatorId)
-            );
+            LabelDefinition definition = new LabelDefinition(normalizedSlug, type, visibleInFilter, sortOrder, operatorId);
+            definition.setCategory(category != null ? category : LabelCategory.GENERAL);
+            LabelDefinition labelDefinition = labelDefinitionRepository.save(definition);
             replaceTranslations(labelDefinition.getId(), normalizedTranslations);
             return labelDefinition;
         } catch (DataIntegrityViolationException ex) {
@@ -87,10 +99,25 @@ public class LabelDefinitionService {
                                   int sortOrder,
                                   List<LabelTranslation> translations,
                                   Set<String> platformRoles) {
+        return update(slug, type, null, visibleInFilter, sortOrder, translations, platformRoles);
+    }
+
+    @Transactional
+    public LabelDefinition update(String slug,
+                                  LabelType type,
+                                  LabelCategory category,
+                                  boolean visibleInFilter,
+                                  int sortOrder,
+                                  List<LabelTranslation> translations,
+                                  Set<String> platformRoles) {
         requireDefinitionAdmin(platformRoles);
         LabelDefinition existing = getBySlug(slug);
         List<LabelTranslation> normalizedTranslations = normalizeTranslations(translations);
         existing.setType(type);
+        // Older clients omit category; preserve the existing business grouping.
+        if (category != null) {
+            existing.setCategory(category);
+        }
         existing.setVisibleInFilter(visibleInFilter);
         existing.setSortOrder(sortOrder);
         try {

@@ -34,7 +34,8 @@ public class PublicLabelAppService {
                 labelDefinition.getType().name(),
                 labelLocalizationService.resolveDisplayName(
                         labelDefinition.getSlug(),
-                        translationsByLabelId.getOrDefault(labelDefinition.getId(), List.of()))
+                        translationsByLabelId.getOrDefault(labelDefinition.getId(), List.of())),
+                labelDefinition.getCategory()
         );
     }
 }
