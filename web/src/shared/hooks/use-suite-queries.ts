@@ -1,4 +1,5 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAuth } from '@/features/auth/use-auth'
 import type {
   PagedResponse,
   MySkillSuiteSummary,
@@ -27,46 +28,60 @@ function buildResourceSearchUrl(params: ResourceSearchParams) {
 }
 
 export function useResourceSearch(params: ResourceSearchParams, enabled = true) {
-  return useQuery({
-    queryKey: ['resources', 'search', params],
+  const { user, isLoading, error } = useAuth()
+  const viewerId = isLoading || error ? undefined : user?.userId ?? null
+  const result = useQuery({
+    queryKey: ['resources', 'search', params, viewerId],
     queryFn: () => fetchJson<PagedResponse<ResourceSummary>>(buildResourceSearchUrl(params)),
-    placeholderData: keepPreviousData,
-    enabled,
+    // Keep pagination smooth, but never carry a previous viewer's results across login changes.
+    placeholderData: (data, previousQuery) => previousQuery?.queryKey[previousQuery.queryKey.length - 1] === viewerId ? data : undefined,
+    enabled: enabled && viewerId !== undefined,
   })
+  return { ...result, isLoading: (enabled && isLoading) || result.isLoading }
 }
 
 export function useMySuites(query = '', page = 0, size = 20) {
-  return useQuery({
-    queryKey: ['suites', 'mine', query, page, size],
+  const { user, isLoading, error } = useAuth()
+  const viewerId = isLoading || error ? undefined : user?.userId ?? null
+  const result = useQuery({
+    queryKey: ['suites', 'mine', query, page, size, viewerId],
     queryFn: () => {
       const params = new URLSearchParams({ q: query, page: String(page), size: String(size) })
       return fetchJson<PagedResponse<MySkillSuiteSummary>>(`${WEB_API_PREFIX}/me/suites?${params.toString()}`)
     },
-    placeholderData: keepPreviousData,
+    placeholderData: (data, previousQuery) => previousQuery?.queryKey[previousQuery.queryKey.length - 1] === viewerId ? data : undefined,
+    enabled: viewerId != null,
   })
+  return { ...result, isLoading: isLoading || result.isLoading }
 }
 
 export function useSuiteDetail(namespace: string, slug: string, version?: string, enabled = true) {
-  return useQuery({
-    queryKey: ['suites', namespace, slug, version],
+  const { user, isLoading, error } = useAuth()
+  const viewerId = isLoading || error ? undefined : user?.userId ?? null
+  const result = useQuery({
+    queryKey: ['suites', namespace, slug, version, viewerId],
     queryFn: () => {
       const suffix = version ? `?version=${encodeURIComponent(version)}` : ''
       return fetchJson<SkillSuite>(
         `${WEB_API_PREFIX}/suites/${normalizeNamespace(namespace)}/${encodeURIComponent(slug)}${suffix}`,
       )
     },
-    enabled: enabled && !!namespace && !!slug,
+    enabled: enabled && viewerId !== undefined && !!namespace && !!slug,
   })
+  return { ...result, isLoading: (enabled && isLoading) || result.isLoading }
 }
 
 export function useSuiteVersions(namespace: string, slug: string, enabled = true) {
-  return useQuery({
-    queryKey: ['suites', namespace, slug, 'versions'],
+  const { user, isLoading, error } = useAuth()
+  const viewerId = isLoading || error ? undefined : user?.userId ?? null
+  const result = useQuery({
+    queryKey: ['suites', namespace, slug, 'versions', viewerId],
     queryFn: () => fetchJson<SkillSuiteVersion[]>(
       `${WEB_API_PREFIX}/suites/${normalizeNamespace(namespace)}/${encodeURIComponent(slug)}/versions`,
     ),
-    enabled: enabled && !!namespace && !!slug,
+    enabled: enabled && viewerId !== undefined && !!namespace && !!slug,
   })
+  return { ...result, isLoading: (enabled && isLoading) || result.isLoading }
 }
 
 export function useSuiteMemberCandidates(
@@ -75,8 +90,10 @@ export function useSuiteMemberCandidates(
   query: string,
   enabled = true,
 ) {
-  return useQuery({
-    queryKey: ['suites', 'member-candidates', namespace, visibility, query],
+  const { user, isLoading, error } = useAuth()
+  const viewerId = isLoading || error ? undefined : user?.userId ?? null
+  const result = useQuery({
+    queryKey: ['suites', 'member-candidates', namespace, visibility, query, viewerId],
     queryFn: () => {
       const params = new URLSearchParams({
         suiteNamespace: normalizeNamespace(namespace),
@@ -88,8 +105,9 @@ export function useSuiteMemberCandidates(
         `${WEB_API_PREFIX}/suites/member-candidates?${params.toString()}`,
       )
     },
-    enabled: enabled && !!namespace && !!visibility,
+    enabled: enabled && viewerId != null && !!namespace && !!visibility,
   })
+  return { ...result, isLoading: (enabled && isLoading) || result.isLoading }
 }
 
 export function useCreateSuite() {
