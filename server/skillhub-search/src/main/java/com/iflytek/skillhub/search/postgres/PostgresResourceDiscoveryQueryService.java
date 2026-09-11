@@ -40,6 +40,7 @@ public class PostgresResourceDiscoveryQueryService implements ResourceDiscoveryQ
                 JOIN namespace ON namespace.id = skill.namespace_id
                 JOIN skill_version version ON version.id = skill.latest_version_id
                 WHERE skill.status = 'ACTIVE'
+                  AND skill.resource_type = 'SKILL'
                   AND skill.hidden = FALSE
                   AND namespace.status <> 'ARCHIVED'
                   AND version.status = 'PUBLISHED'

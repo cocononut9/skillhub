@@ -112,6 +112,39 @@ class SuiteDiscoveryIntegrationTest {
     }
 
     @Test
+    void discoveryExcludesNonSkillResourcesFromResultsAndTotals() {
+        Namespace namespace = entityManager.persistFlushFind(
+                new Namespace("resource-discovery", "Resource Discovery", "owner"));
+        for (ResourceType type : ResourceType.values()) {
+            Skill skill = new Skill(namespace.getId(), "resource-" + type.name().toLowerCase(java.util.Locale.ROOT),
+                    "owner", SkillVisibility.PUBLIC);
+            skill.setResourceType(type);
+            skill = entityManager.persistFlushFind(skill);
+            SkillVersion version = new SkillVersion(skill.getId(), "1.0.0", "owner");
+            version.setStatus(SkillVersionStatus.PUBLISHED);
+            version.setDownloadReady(true);
+            version = entityManager.persistFlushFind(version);
+            skill.setLatestVersionId(version.getId());
+            entityManager.persistAndFlush(skill);
+        }
+        entityManager.clear();
+
+        for (String resourceType : List.of("SKILL", "")) {
+            var firstPage = appService.search("resource-", namespace.getSlug(), resourceType,
+                    "newest", 0, 1, Set.of());
+            assertThat(firstPage.total()).isEqualTo(1);
+            assertThat(firstPage.items()).singleElement().satisfies(item -> {
+                assertThat(item.slug()).isEqualTo("resource-skill");
+                assertThat(item.resourceType()).isEqualTo("SKILL");
+            });
+            var nextPage = appService.search("resource-", namespace.getSlug(), resourceType,
+                    "newest", 1, 1, Set.of());
+            assertThat(nextPage.total()).isEqualTo(1);
+            assertThat(nextPage.items()).isEmpty();
+        }
+    }
+
+    @Test
     void returnsSkillAndSuiteWithTheSameCoordinateAsDistinctResourceTypes() {
         Namespace namespace = entityManager.persistFlushFind(
                 new Namespace("team-ai", "AI Team", "owner"));
