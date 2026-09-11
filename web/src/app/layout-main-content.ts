@@ -1,4 +1,3 @@
-export const LANDING_MAIN_CLASS_NAME = 'flex-1 relative z-10'
 export const DEFAULT_MAIN_CLASS_NAME = 'flex-1 relative z-10 px-6 py-10 md:px-12'
 export const CENTERED_MAIN_CLASS_NAME = 'flex-1 relative z-10 px-4 py-8 sm:px-6 md:px-12 md:py-10'
 export const CENTERED_SEARCH_CONTENT_CLASS_NAME = 'mx-auto w-full max-w-[1200px]'
@@ -19,14 +18,7 @@ export function resolveAppMainContentPathname(
 }
 
 export function getAppMainContentLayout(pathname: string): AppMainContentLayout {
-  if (pathname === '/') {
-    return {
-      mainClassName: LANDING_MAIN_CLASS_NAME,
-      contentClassName: '',
-    }
-  }
-
-  if (pathname === '/search') {
+  if (pathname === '/' || pathname === '/search') {
     return {
       mainClassName: CENTERED_MAIN_CLASS_NAME,
       contentClassName: CENTERED_SEARCH_CONTENT_CLASS_NAME,

@@ -7,7 +7,7 @@ import { NamespaceBadge } from '@/shared/components/namespace-badge'
 import { getHeadlineVersion } from '@/shared/lib/skill-lifecycle'
 import { formatCompactCount } from '@/shared/lib/number-format'
 import { formatRelativeTime } from '@/shared/lib/format-relative-time'
-import { Bookmark, ShieldCheck, User, Clock } from 'lucide-react'
+import { Bookmark, ShieldCheck, User, Clock, Wand2, Globe2, Puzzle, MessageSquareText } from 'lucide-react'
 
 interface SkillCardProps {
   skill: SkillSummary
@@ -30,11 +30,14 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
   const downloadLabel = t('skillCard.downloads', { value: formatCompactCount(skill.downloadCount) })
   const starLabel = t('skillCard.stars', { count: skill.starCount })
   const ratingLabel = t('skillCard.rating', { rating: skill.ratingAvg?.toFixed(1) ?? '0.0' })
+  const ResourceIcon = skill.resourceType === 'WEB' ? Globe2
+    : skill.resourceType === 'PLUGIN' ? Puzzle
+      : skill.resourceType === 'PROMPT' ? MessageSquareText : Wand2
 
   return (
     <Card
-      className="group relative h-full cursor-pointer overflow-hidden rounded-md border border-border/60 bg-card p-4 text-card-foreground transition-[transform,box-shadow,border-color] duration-150 ease-out card-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15"
-      style={{ borderColor: 'hsl(var(--border-card))', boxShadow: 'var(--shadow-card)' }}
+      className="skill-resource-card group relative h-full cursor-pointer overflow-hidden rounded-md border border-border bg-card p-4 text-card-foreground transition-[transform,box-shadow,border-color] duration-150 ease-out card-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/15"
+      data-resource-type={skill.resourceType ?? 'SKILL'}
       onClick={onClick}
       onKeyDown={(event) => {
         if (!isInteractive) {
@@ -50,6 +53,9 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
       tabIndex={isInteractive ? 0 : undefined}
     >
       <div className="flex h-full flex-col">
+        <span className="resource-icon mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg" aria-hidden="true">
+          <ResourceIcon className="h-4 w-4" />
+        </span>
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0 flex-1 space-y-2">
             <h3 className="line-clamp-2 break-words font-semibold text-base group-hover:text-primary transition-colors duration-150" style={{ color: 'hsl(var(--foreground))' }} title={skill.displayName}>
@@ -95,7 +101,7 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
 
         <div className="mt-auto flex items-center gap-4 text-xs text-muted-foreground">
           {headlineVersion && (
-            <span className="px-2.5 py-1 rounded-full bg-secondary/60 font-mono text-[11px] font-semibold" style={{ color: 'hsl(215 30% 35%)' }}>
+            <span className="px-2.5 py-1 rounded-full bg-secondary/60 text-secondary-foreground font-mono text-[11px] font-semibold">
               v{headlineVersion.version}
             </span>
           )}

@@ -84,12 +84,9 @@ export function Layout() {
   }> = [
     { label: t('nav.landing'), to: '/', exact: true },
     { label: t('nav.publish'), to: '/dashboard/publish', auth: true },
-    { label: t('nav.search'), to: '/search' },
     { label: t('demand.square'), to: '/demands', auth: true },
-    { label: t('nav.suites', { defaultValue: '技能套件' }), to: '/suites' },
     { label: t('nav.dashboard'), to: '/dashboard', auth: true },
     { label: t('nav.mySkills'), to: '/dashboard/skills', auth: true },
-    { label: t('nav.mySuites'), to: '/dashboard/suites', auth: true },
   ]
 
   const isActive = (to: string, exact?: boolean) => {
@@ -117,12 +114,13 @@ export function Layout() {
 
       {/* Header */}
       <header className={getAppHeaderClassName(isHeaderElevated)} style={{ borderColor: 'hsl(var(--border))' }}>
-        <Link to="/" className="text-xl font-semibold tracking-tight flex-shrink-0" style={{ color: 'hsl(var(--foreground))' }}>
-          SkillHub
+        <Link to="/" className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl font-semibold tracking-tight flex-shrink-0" style={{ color: 'hsl(var(--foreground))' }}>
+          <BrandMark className="h-6 w-14 sm:h-8 sm:w-[88px]" />
+          <span className="border-l border-border pl-2 sm:pl-3">SkillHub</span>
         </Link>
 
         {/* Desktop nav — lg+ only */}
-        <nav className="hidden lg:flex items-center gap-5 text-[15px] font-normal" style={{ color: 'hsl(var(--text-secondary))' }}>
+        <nav className="hidden lg:flex items-center gap-0 xl:gap-1 font-normal" style={{ color: 'hsl(var(--text-secondary))' }}>
           {navItems.map((item) => {
             if (item.auth && !user) return null
             const active = isActive(item.to, item.exact)
@@ -131,11 +129,13 @@ export function Layout() {
               <Link
                 key={item.to}
                 to={item.to}
+                data-nav-accent={item.to}
                 className={
                   active
-                    ? 'px-4 py-1.5 rounded-full text-sm font-medium bg-foreground text-background shadow-[0_1px_2px_0_rgb(0_0_0/0.12)]'
-                    : 'px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity duration-150'
+                    ? 'px-2 xl:px-3 py-1.5 rounded-full text-xs xl:text-sm font-semibold bg-accent text-accent-foreground whitespace-nowrap'
+                    : 'px-2 xl:px-3 py-1.5 rounded-full text-xs xl:text-sm font-medium hover:bg-accent/60 transition-colors duration-150 whitespace-nowrap'
                 }
+                aria-current={active ? 'page' : undefined}
                 style={active ? undefined : { color: 'hsl(var(--foreground) / 0.65)' }}
               >
                 {item.label}
@@ -156,7 +156,7 @@ export function Layout() {
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <ThemeToggle />
-          <LanguageSwitcher />
+          <LanguageSwitcher className="px-2 sm:px-3" />
           {user && <NotificationBell />}
           {isLoading ? null : user ? (
             <UserMenu user={user} />
@@ -173,7 +173,7 @@ export function Layout() {
 
       {/* Mobile nav dropdown */}
       {mobileMenuOpen ? (
-        <div className="lg:hidden sticky top-[52px] z-40 border-b border-border bg-background/95 backdrop-blur-xl">
+        <div className="lg:hidden sticky top-[57px] z-40 border-b border-border bg-background/95 backdrop-blur-xl">
           <nav className="flex flex-col px-4 py-3 gap-1">
             {navItems.map((item) => {
               if (item.auth && !user) return null
@@ -182,6 +182,8 @@ export function Layout() {
                 <Link
                   key={item.to}
                   to={item.to}
+                  data-nav-accent={item.to}
+                  aria-current={active ? 'page' : undefined}
                   className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     active ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                   }`}
@@ -227,7 +229,7 @@ export function Layout() {
           <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
             <div className="col-span-2 md:col-span-1">
               <div className="mb-4 flex items-center gap-2.5">
-                <BrandMark className="h-8 w-8 rounded-lg bg-background ring-1 ring-border/70" />
+                <BrandMark className="h-8 w-[88px]" />
                 <span className="font-semibold text-foreground">SkillHub</span>
               </div>
               <p className="text-sm text-muted-foreground">{t('layout.footerDescription')}</p>

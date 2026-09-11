@@ -141,7 +141,7 @@ function HeroBrowserMockup({ onSearch }: { onSearch: (query: string) => void }) 
       </div>
 
       <div className="absolute -bottom-3 -right-3 hidden items-center gap-3 rounded-xl border border-border/70 bg-background p-3 shadow-lg sm:flex">
-        <BrandMark className="h-9 w-9 rounded-lg bg-background ring-1 ring-border/70" />
+        <BrandMark className="h-9 w-[104px]" />
         <div>
           <div className="text-sm font-semibold text-foreground">{t('landing.hero.publishSkill')}</div>
           <div className="text-xs text-muted-foreground">Web · CLI · Agent</div>
@@ -174,8 +174,8 @@ function EnterpriseSection() {
             <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
               {t('landing.experience.enterprise.deployment.description')}
             </p>
-            <div className="flex-1 rounded-lg border border-border/70 bg-secondary/50 p-4">
-              <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-border/70 bg-secondary/50 p-4">
+              <div className="mb-3 flex min-w-[360px] items-center justify-between gap-2">
                 <div className="flex flex-col gap-1.5 flex-shrink-0">
                   <div className="mb-0.5 text-center text-[10px] text-muted-foreground">{t('landing.experience.enterprise.clientLayer')}</div>
                   <div className="rounded-md border border-border/70 bg-background px-3 py-1.5 text-center text-[11px] font-medium text-muted-foreground">Agent</div>
@@ -335,10 +335,7 @@ export function LandingPage() {
 
   return (
     <>
-      <main ref={heroView.ref} className={`relative z-10 w-full overflow-hidden px-6 py-16 scroll-fade-up${heroView.inView ? ' in-view' : ''} md:py-20`}>
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute left-1/2 top-0 h-[400px] w-[900px] -translate-x-1/2 rounded-full bg-secondary blur-3xl" />
-        </div>
+      <main ref={heroView.ref} className={`brand-hero relative z-10 w-full overflow-hidden px-6 py-16 scroll-fade-up${heroView.inView ? ' in-view' : ''} md:py-20`}>
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/80 px-3 py-1.5 text-xs font-medium text-muted-foreground">

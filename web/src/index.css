@@ -4,66 +4,42 @@
 
 @layer base {
   :root {
-    /* ═══════════════════════════════════════════
-       SkillHub — 白 + 近黑（ref: skillhub-clone, TabTin, skillhub.cn）
-       纯白底，冷灰卡片 #f2f3f5，近黑按钮 #202020
-       无品牌色，所有表达通过灰阶深度
-       ═══════════════════════════════════════════ */
-
-    /* ── 基础层 — 纯白底，对标 skillhub-clone / skillhub.cn ── */
-    --background: 0 0% 100%;               /* #ffffff */
-    --foreground: 0 0% 0%;                 /* #000000 文字 */
-    --card: 0 0% 100%;                     /* #ffffff 纯白卡片 */
-    --card-foreground: 0 0% 0%;
+    /* 银灰蓝：浅色表面、千岸深蓝文字与蓝色操作按钮。 */
+    --background: 210 38% 97%;
+    --foreground: 215 100% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 100% 20%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-
-    /* ── 主色 — 近黑（无品牌色，对标 skillhub-clone #202020） ── */
-    --primary: 0 0% 13%;                   /* #202020 */
+    --popover-foreground: 215 100% 20%;
+    --primary: 216 100% 35%;
     --primary-foreground: 0 0% 100%;
-
-    /* ── 表面层 — 冷灰递进 ── */
-    --secondary: 240 3% 97%;               /* #f6f7f9 */
-    --secondary-foreground: 0 0% 0%;
-    --muted: 240 3% 94%;                   /* #eef0f2 */
-    --muted-foreground: 0 0% 45%;          /* #737373，保证辅助文字可读性 */
-
-    /* ── 强调色 — 淡蓝 hover（对齐 TabTin hsl(214 70% 96%)） ── */
-    --accent: 214 70% 96%;                  /* 淡蓝 hover */
-    --accent-foreground: 0 0% 7%;          /* #111111 */
-
-    /* ── 功能色 ── */
+    --secondary: 213 45% 96%;
+    --secondary-foreground: 216 35% 35%;
+    --muted: 213 35% 94%;
+    --muted-foreground: 216 24% 43%;
+    --accent: 212 90% 94%;
+    --accent-foreground: 216 100% 32%;
     --destructive: 0 55% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 92%;                    /* rgba(0,0,0,0.08) */
-    --input: 240 3% 95%;                   /* #f2f3f5 */
-    --ring: 0 0% 13%;                      /* #202020 */
-    --radius: 0.625rem;                    /* 10px，对标 skillhub-clone */
-
-    /* ── 扩展色板 ── */
+    --border: 214 55% 87%;
+    --input: 214 45% 88%;
+    --ring: 216 90% 48%;
+    --radius: 0.625rem;
     --surface-glass: 0 0% 100%;
-    --glow-primary: 0 0% 13%;
-    --glow-accent: 0 0% 7%;
+    --glow-primary: 213 80% 66%;
+    --glow-accent: 212 70% 78%;
     --success: 160 50% 40%;
     --warning: 38 85% 50%;
-
-    /* ── 品牌渐变 — 无（纯黑） ── */
-    --brand-start: #202020;
-    --brand-end: #111111;
-    --brand-gradient: none;
-
-    /* ── 文字语义色 — 对标 clone 的 rgba(0,0,0,0.62) / 0.4 ── */
-    --text-secondary: 0 0% 45%;            /* #737373，正文辅助信息 */
-    --text-muted: 0 0% 38%;
-    --text-placeholder: 0 0% 45%;
-
-    /* ── 边框语义 ── */
-    --border-card: 0 0% 94%;               /* rgba(0,0,0,0.06) */
-
-    /* ── 阴影 token — 极轻，对标 clone 的 0 1px 3px rgba(0,0,0,0.04) ── */
-    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04);
-    --shadow-card-hover: 0 4px 12px 0 rgb(0 0 0 / 0.08);
-    --shadow-btn-primary: 0 1px 2px 0 rgb(0 0 0 / 0.06);
+    --brand-start: #0052b8;
+    --brand-end: #002b68;
+    --brand-gradient: linear-gradient(135deg, var(--brand-start), var(--brand-end));
+    --text-secondary: 216 32% 37%;
+    --text-muted: 216 24% 43%;
+    --text-placeholder: 216 22% 46%;
+    --border-card: 214 55% 87%;
+    --shadow-card: 0 2px 8px 0 rgb(0 43 104 / 0.04);
+    --shadow-card-hover: 0 6px 18px 0 rgb(0 43 104 / 0.09);
+    --shadow-btn-primary: 0 2px 5px 0 rgb(0 43 104 / 0.12);
   }
 
   .dark {
@@ -169,6 +145,149 @@
   input[type="password"]::-webkit-credentials-auto-fill-button {
     display: none;
   }
+}
+
+/* 银灰蓝品牌表面；装饰不占布局空间，也不接收点击。 */
+.app-header {
+  background: hsl(var(--card) / 0.94);
+}
+
+.company-logo {
+  filter: brightness(0) saturate(100%) invert(13%) sepia(74%) saturate(2680%) hue-rotate(205deg) brightness(90%) contrast(108%);
+}
+
+.dark .company-logo {
+  filter: brightness(0) invert(1);
+}
+
+[data-resource-type='SKILL'] { --decoration-color: 216 80% 58%; }
+[data-resource-type='WEB'] { --decoration-color: 38 85% 47%; }
+[data-resource-type='PLUGIN'] { --decoration-color: 160 57% 40%; }
+[data-resource-type='PROMPT'] { --decoration-color: 263 65% 61%; }
+[data-nav-accent='/'] { --decoration-color: 216 80% 58%; }
+[data-nav-accent='/dashboard/publish'] { --decoration-color: 160 57% 40%; }
+[data-nav-accent='/demands'] { --decoration-color: 263 65% 61%; }
+[data-nav-accent='/dashboard'] { --decoration-color: 38 85% 47%; }
+[data-nav-accent='/dashboard/skills'] { --decoration-color: 338 65% 61%; }
+
+[data-nav-accent]::before,
+.search-filters button[data-resource-type]::before {
+  content: '';
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(var(--decoration-color));
+}
+
+[data-nav-accent]::before { margin-right: 6px; vertical-align: middle; }
+
+[data-label-category] > span:first-child::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  margin-right: 7px;
+  border-radius: 3px;
+  vertical-align: -1px;
+  background: hsl(263 65% 61%);
+}
+
+[data-label-category='ROLE'] > span:first-child::before { background: hsl(160 57% 40%); }
+[data-label-category='GENERAL'] > span:first-child::before { background: hsl(38 85% 47%); }
+
+.brand-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(125deg, hsl(210 70% 97%), hsl(212 65% 95%), hsl(210 50% 97%));
+}
+
+.brand-hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: auto 0 0;
+  height: 120px;
+  pointer-events: none;
+  background-image: linear-gradient(hsl(var(--ring) / 0.09) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--ring) / 0.09) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(transparent, black);
+}
+
+.brand-hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  right: 24px;
+  bottom: 24px;
+  width: 160px;
+  height: 40px;
+  opacity: 0.3;
+  pointer-events: none;
+  background: linear-gradient(#7da6d6, #7da6d6) right top / 100% 6px no-repeat,
+    linear-gradient(#7da6d6, #7da6d6) right center / 82% 6px no-repeat,
+    linear-gradient(#7da6d6, #7da6d6) right bottom / 56% 6px no-repeat;
+}
+
+.dark .brand-hero {
+  background: linear-gradient(125deg, hsl(216 28% 12%), hsl(216 32% 17%), hsl(216 24% 12%));
+}
+
+.brand-eyebrow { display: flex; align-items: center; gap: 9px; }
+.brand-eyebrow::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #628fc5;
+  box-shadow: 0 0 0 4px rgb(98 143 197 / 0.08);
+}
+
+.search-filters button.bg-background\/70 {
+  background: hsl(var(--card));
+}
+
+.search-filters button.bg-background\/70:hover {
+  background: hsl(var(--accent));
+}
+
+.search-filters button.bg-primary {
+  color: hsl(var(--accent-foreground));
+  background: hsl(var(--accent));
+  border: 1px solid hsl(var(--ring) / 0.45);
+  box-shadow: inset 0 1px 3px hsl(var(--ring) / 0.06);
+}
+
+.search-filters button.bg-primary:hover {
+  background: hsl(var(--accent) / 0.7);
+}
+
+.skill-resource-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: hsl(var(--decoration-color) / 0.6);
+}
+
+.resource-icon {
+  color: hsl(var(--decoration-color));
+  background: hsl(var(--decoration-color) / 0.1);
+  box-shadow: inset 0 0 0 1px hsl(var(--decoration-color) / 0.12);
+}
+.dark .resource-icon { color: hsl(var(--decoration-color) / 1); filter: brightness(1.35); }
+.skill-resource-card[data-resource-type='WEB'] .shrink-0.bg-secondary { background: #fff5d9; color: #855711; }
+.skill-resource-card[data-resource-type='PLUGIN'] .shrink-0.bg-secondary { background: #ddf9ee; color: #14674c; }
+.skill-resource-card[data-resource-type='PROMPT'] .shrink-0.bg-secondary { background: #f0eaff; color: #6545ad; }
+.dark .skill-resource-card::before { opacity: 0.65; }
+.dark .skill-resource-card[data-resource-type='WEB'] .shrink-0.bg-secondary { background: #3d301b; color: #f4d488; }
+.dark .skill-resource-card[data-resource-type='PLUGIN'] .shrink-0.bg-secondary { background: #193d32; color: #99e5cc; }
+.dark .skill-resource-card[data-resource-type='PROMPT'] .shrink-0.bg-secondary { background: #302443; color: #cab7ff; }
+
+@media (max-width: 639px) {
+  .brand-hero::after { width: 88px; opacity: 0.16; }
 }
 
 /* ─── Dot-grid background texture ─── */
@@ -581,7 +700,7 @@
    样式细节增强（不改颜色，只改交互/布局/字体）
    ═══════════════════════════════════════════ */
 
-/* ─── 胶囊按钮（白 + 近黑风格） ─── */
+/* ─── 胶囊按钮 ─── */
 .btn-pill {
   display: inline-flex;
   align-items: center;
@@ -597,33 +716,33 @@
   outline-offset: 3px;
 }
 .btn-pill-primary {
-  background: #202020;
-  color: #fff;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   box-shadow: 0 1px 0 rgb(255 255 255 / 16%) inset, 0 4px 12px rgb(0 0 0 / 8%);
 }
 .btn-pill-primary:hover {
-  background: #111111;
+  background: hsl(var(--primary) / 0.9);
   transform: translateY(-1px);
   box-shadow: 0 1px 0 rgb(255 255 255 / 16%) inset, 0 7px 18px rgb(0 0 0 / 12%);
 }
 .btn-pill-primary:active {
-  background: #000;
+  background: hsl(var(--primary) / 0.95);
   transform: translateY(0) scale(0.985);
   box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
 }
 .btn-pill-outline {
-  background: #f2f2f2;
-  color: #000;
-  border: 1px solid transparent;
+  background: hsl(var(--card));
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.4);
   box-shadow: none;
 }
 .btn-pill-outline:hover {
-  background: #e8e8e8;
-  border-color: rgb(0 0 0 / 6%);
+  background: hsl(var(--accent));
+  border-color: hsl(var(--primary) / 0.6);
   transform: translateY(-1px);
 }
 .btn-pill-outline:active {
-  background: #dedede;
+  background: hsl(var(--accent));
   transform: translateY(0) scale(0.985);
 }
 @media (prefers-reduced-motion: reduce) {

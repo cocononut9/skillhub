@@ -108,6 +108,65 @@ test('grouped filters, clearing, refresh and starred intersection work on deskto
   await expect(page.getByText('测试资源 2', { exact: true })).toBeVisible()
 })
 
+test('combined homepage shows introduction and search with five navigation entries on desktop and mobile', async ({ page }) => {
+  await mockApi(page)
+  await page.goto('/')
+  await expect(page).toHaveURL('http://127.0.0.1:3104/')
+  await expect(page.locator('h1')).toBeVisible()
+  await expect(page.getByRole('heading', { name: '发现好工具，分享好方法' })).toBeVisible()
+  await expect(page.getByRole('group', { name: '流程标签', exact: true })).toBeVisible()
+  const expectedNames = ['首页', '发布', '需求广场', '控制台', '我的技能']
+  const expectedPaths = ['/', '/dashboard/publish', '/demands', '/dashboard', '/dashboard/skills']
+  const desktopNav = page.locator('header nav')
+  await expect(desktopNav.getByRole('link')).toHaveText(expectedNames)
+  for (const [index, path] of expectedPaths.entries()) {
+    await expect(desktopNav.getByRole('link').nth(index)).toHaveAttribute('href', path)
+  }
+  await expect(desktopNav.getByRole('link', { name: '首页', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByText('测试资源 1', { exact: true })).toBeVisible()
+
+  await page.setViewportSize({ width: 1024, height: 900 })
+  await expect(desktopNav).toBeVisible()
+  await expect(page.getByRole('button', { name: '打开导航菜单' })).toBeHidden()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+
+  await page.setViewportSize({ width: 375, height: 812 })
+  await expect(desktopNav).toBeHidden()
+  await page.getByRole('button', { name: '打开导航菜单' }).click()
+  const mobileNav = page.locator('nav').filter({ has: page.getByRole('link', { name: '需求广场', exact: true }) }).last()
+  await expect(mobileNav.getByRole('link')).toHaveText(expectedNames)
+  await mobileNav.getByRole('link', { name: '首页', exact: true }).click()
+  await expect(page.getByRole('button', { name: '打开导航菜单' })).toBeVisible()
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/')
+  await expect(page.locator('h1')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+})
+
+test('combined homepage keeps public search and login protection for anonymous visitors', async ({ page }) => {
+  await mockApi(page)
+  await page.route('**/api/v1/auth/me', (route) => route.fulfill({ status: 401, json: { code: 401, msg: 'Unauthorized' } }))
+  await page.goto('/')
+  await expect(page.locator('h1')).toBeVisible()
+  await expect(page.locator('header nav').getByRole('link')).toHaveText(['首页'])
+  await expect(page.getByRole('group', { name: '流程标签', exact: true })).toBeVisible()
+  await page.goto('/dashboard/publish')
+  await expect(page).toHaveURL(/\/login\?returnTo=/)
+})
+
+test('legacy search links preserve filters, query, sort and page on the homepage', async ({ page }) => {
+  await mockApi(page)
+  await page.goto('/search?q=测试&namespace=global&workflow=brand-marketing&role=brand-specialist&resourceType=WEB&sort=downloads&page=2&starredOnly=true')
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/')
+  const params = new URL(page.url()).searchParams
+  for (const [key, value] of Object.entries({
+    q: '测试', namespace: 'global', workflow: 'brand-marketing', role: 'brand-specialist',
+    resourceType: 'WEB', sort: 'downloads', page: '2', starredOnly: 'true',
+  })) {
+    expect(params.get(key)).toBe(value)
+  }
+  await expect(page.getByRole('heading', { name: '发现好工具，分享好方法' })).toBeVisible()
+})
+
 test('admin can edit business category without changing attachment permission type', async ({ page }) => {
   const { writes } = await mockApi(page)
   await page.goto('/admin/labels')

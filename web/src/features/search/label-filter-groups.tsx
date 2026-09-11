@@ -21,7 +21,7 @@ export function LabelFilterGroups({ labels, selected, onSelect }: Props) {
         // A removed/hidden label in a saved URL must remain visible and removable.
         const missingSelection = value && !options.some((label) => label.slug === value)
         return (
-          <div key={category} className="flex flex-wrap items-center gap-2" role="group" aria-label={t('labelCategories.' + category)}>
+          <div key={category} className="flex flex-wrap items-center gap-2" role="group" data-label-category={category} aria-label={t('labelCategories.' + category)}>
             <span className="shrink-0 text-sm font-medium text-muted-foreground">{t('labelCategories.' + category)}</span>
             <Button size="sm" variant={!value ? 'default' : 'outline'} aria-pressed={!value} onClick={() => onSelect(category, '')}>
               {t('search.allLabels')}

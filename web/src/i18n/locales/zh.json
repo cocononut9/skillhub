@@ -350,6 +350,8 @@
     }
   },
   "search": {
+    "introTitle": "发现好工具，分享好方法",
+    "introDescription": "在 SkillHub 查找和分享团队的 AI 技能、网页工具、插件与提示词，让工作经验成为可复用的资源。",
     "allLabels": "全部",
     "otherFilters": "其他条件",
     "clearLabels": "清除标签筛选",

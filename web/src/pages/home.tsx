@@ -34,9 +34,9 @@ export function HomePage() {
   return (
     <div className="space-y-20">
       {/* Hero Section */}
-      <div className="text-center space-y-8 py-16 animate-fade-up">
+      <div className="brand-hero rounded-xl border border-border text-center space-y-8 px-4 py-16 animate-fade-up">
         <div className="space-y-4">
-          <BrandMark className="mx-auto h-16 w-16 rounded-2xl bg-background shadow-sm ring-1 ring-border/70 md:h-20 md:w-20" />
+          <BrandMark className="mx-auto h-10 w-[116px]" />
           <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight" style={{ color: 'hsl(var(--foreground))' }}>
             SkillHub
           </h1>
@@ -54,14 +54,13 @@ export function HomePage() {
 
         <div className="flex items-center justify-center gap-4 animate-fade-up delay-2">
           <button
-            className="px-8 py-3.5 rounded-xl text-base font-medium text-white bg-[#202020] shadow-sm hover:bg-[#111] transition-colors"
+            className="px-8 py-3.5 rounded-xl text-base font-semibold text-primary-foreground bg-primary shadow-sm hover:bg-primary/90 transition-colors focus-ring"
             onClick={() => navigate({ to: '/search', search: { q: '', sort: 'relevance', page: 0, starredOnly: false } })}
           >
             {t('home.browseSkills')}
           </button>
           <button
-            className="px-8 py-3.5 rounded-xl text-base font-medium border transition-colors"
-            style={{ background: 'var(--bg-secondary-btn, #F7FAFC)', borderColor: 'hsl(var(--muted-foreground))', color: 'hsl(var(--muted-foreground))' }}
+            className="px-8 py-3.5 rounded-xl text-base font-semibold border border-primary/50 bg-card text-primary hover:bg-accent transition-colors focus-ring"
             onClick={() => navigate({ to: '/dashboard/publish' })}
           >
             {t('home.publishSkill')}

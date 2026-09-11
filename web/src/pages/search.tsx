@@ -102,7 +102,7 @@ function sortStarredSkills(skills: SkillSummary[], sort: string): SkillSummary[]
 export function SearchPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const searchParams = useSearch({ from: '/search' })
+  const searchParams = useSearch({ from: '/' })
   const { isAuthenticated } = useAuth()
 
   const q = normalizeSearchQuery(searchParams.q || '')
@@ -167,14 +167,14 @@ export function SearchPage() {
 
     if (!parsedInput.query && !parsedInput.namespace) {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: '', namespace: '', label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly }, replace: page === 0 })
+        navigate({ to: '/', search: { q: '', namespace: '', label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly }, replace: page === 0 })
       })
       return
     }
 
     const timeoutId = window.setTimeout(() => {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly }, replace: true })
+        navigate({ to: '/', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly }, replace: true })
       })
     }, 250)
 
@@ -185,23 +185,23 @@ export function SearchPage() {
     const parsedInput = parseNamespaceSearchInput(query)
     setQueryInput(query)
     startTransition(() => {
-      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly }, replace: true })
+      navigate({ to: '/', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly }, replace: true })
     })
   }
 
   const handleSortChange = (newSort: string) => {
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort: newSort, page: 0, starredOnly } })
+    navigate({ to: '/', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort: newSort, page: 0, starredOnly } })
   }
 
   const handlePageChange = (newPage: number) => {
     blurActiveElement()
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: newPage, starredOnly } })
+    navigate({ to: '/', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: newPage, starredOnly } })
   }
 
   const handleLabelToggle = (category: LabelCategory, slug: string) => {
     const current = category === 'WORKFLOW' ? selectedWorkflow : category === 'ROLE' ? selectedRole : selectedLabel
     const next = current === slug ? '' : slug
-    navigate({ to: '/search', search: {
+    navigate({ to: '/', search: {
       q, namespace, resourceType, sort, page: 0, starredOnly,
       label: category === 'GENERAL' ? next : selectedLabel,
       workflow: (category === 'WORKFLOW' ? next : selectedWorkflow) || undefined,
@@ -210,11 +210,11 @@ export function SearchPage() {
   }
 
   const handleClearLabels = () => {
-    navigate({ to: '/search', search: { q, namespace, resourceType, sort, page: 0, starredOnly } })
+    navigate({ to: '/', search: { q, namespace, resourceType, sort, page: 0, starredOnly } })
   }
 
   const handleNamespaceClear = () => {
-    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly } })
+    navigate({ to: '/', search: { q, namespace: '', label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly } })
   }
 
   const handleStarredToggle = () => {
@@ -228,7 +228,7 @@ export function SearchPage() {
       return
     }
 
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly: !starredOnly } })
+    navigate({ to: '/', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType, sort, page: 0, starredOnly: !starredOnly } })
   }
 
   const handleSkillClick = (namespace: string, slug: string) => {
@@ -262,8 +262,18 @@ export function SearchPage() {
 
   return (
     <div className={APP_SHELL_PAGE_CLASS_NAME}>
+      <section className="brand-hero rounded-2xl border border-primary/10 px-6 py-7 sm:px-8 sm:py-8" aria-labelledby="discovery-heading">
+        <p className="brand-eyebrow mb-2 text-xs font-semibold tracking-[0.2em] text-primary">SKILLHUB</p>
+        <h1 id="discovery-heading" className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          {t('search.introTitle')}
+        </h1>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
+          {t('search.introDescription')}
+        </p>
+      </section>
+
       {/* Search Bar */}
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full">
         <SearchBar
           value={queryInput}
           isSearching={isUpdatingResults}
@@ -273,17 +283,18 @@ export function SearchPage() {
       </div>
 
       {/* Sort And Filters */}
-      <div className="space-y-4">
+      <div className="search-filters space-y-4">
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t('search.resourceType')}>
           <span className="shrink-0 text-sm font-medium text-muted-foreground">{t('search.resourceType')}</span>
           {RESOURCE_TYPES.map((type) => (
             <Button
               key={type.value ?? 'all'}
+              data-resource-type={type.value}
               variant={resourceType === type.value ? 'default' : 'outline'}
               size="sm"
               className="whitespace-nowrap"
               aria-pressed={resourceType === type.value}
-              onClick={() => navigate({ to: '/search', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType: type.value, sort, page: 0, starredOnly } })}
+              onClick={() => navigate({ to: '/', search: { q, namespace, label: selectedLabel, workflow: selectedWorkflow || undefined, role: selectedRole || undefined, resourceType: type.value, sort, page: 0, starredOnly } })}
             >
               {t(type.label)}
             </Button>

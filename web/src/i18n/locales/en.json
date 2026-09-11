@@ -350,6 +350,8 @@
     }
   },
   "search": {
+    "introTitle": "Discover useful tools. Share what works.",
+    "introDescription": "Find and share your team’s AI skills, web tools, plugins, and prompts on SkillHub, turning everyday experience into reusable resources.",
     "allLabels": "All",
     "otherFilters": "Other filters",
     "clearLabels": "Clear label filters",
