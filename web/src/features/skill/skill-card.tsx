@@ -25,6 +25,7 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
   const { starredIds } = useStarredIdSet(highlightStarred && isAuthenticated)
   const showStarredHighlight = highlightStarred && isAuthenticated && starredIds.has(skill.id)
   const headlineVersion = getHeadlineVersion(skill)
+  const labels = skill.labels ?? []
   const isInteractive = typeof onClick === 'function'
   const complianceItems = skill.complianceSnapshot?.items?.filter((item) => item.standard || item.controlId) ?? []
   const downloadLabel = t('skillCard.downloads', { value: formatCompactCount(skill.downloadCount) })
@@ -77,6 +78,28 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
           >
             {skill.summary}
           </p>
+        )}
+
+        {labels.length > 0 && (
+          <ul className="skill-card-labels mb-3 flex flex-wrap gap-1.5">
+            {labels.slice(0, 3).map((label) => (
+              <li
+                key={label.slug}
+                className="max-w-full truncate rounded-full border border-primary/10 bg-primary/5 px-2 py-0.5 text-xs text-primary"
+                title={label.displayName || label.slug}
+              >
+                {label.displayName || label.slug}
+              </li>
+            ))}
+            {labels.length > 3 && (
+              <li
+                className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
+                title={labels.slice(3).map((label) => label.displayName || label.slug).join('、')}
+              >
+                +{labels.length - 3}
+              </li>
+            )}
+          </ul>
         )}
 
         {complianceItems.length > 0 ? (

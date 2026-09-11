@@ -18,7 +18,7 @@ describe('buildSkillSearchUrl', () => {
   })
   it('combines a resource type with keyword, label and pagination', () => {
     const url = new URL(buildSkillSearchUrl({ q: '报告', label: 'official', resourceType: 'WEB', page: 2, size: 12 }), 'https://example.test')
-    expect(Object.fromEntries(url.searchParams)).toEqual({ q: '报告', label: 'official', resourceType: 'WEB', page: '2', size: '12' })
+    expect(Object.fromEntries(url.searchParams)).toEqual({ include: 'labels', q: '报告', label: 'official', resourceType: 'WEB', page: '2', size: '12' })
   })
 
   it('normalizes the query and strips the namespace prefix', () => {
@@ -29,15 +29,15 @@ describe('buildSkillSearchUrl', () => {
       sort: 'relevance',
       page: 2,
       size: 12,
-    })).toBe('/api/web/skills?q=hello+world&namespace=team-ai&label=code-generation&sort=relevance&page=2&size=12')
+    })).toBe('/api/web/skills?include=labels&q=hello+world&namespace=team-ai&label=code-generation&sort=relevance&page=2&size=12')
   })
 
-  it('returns the base skills endpoint when no search params are provided', () => {
-    expect(buildSkillSearchUrl({})).toBe('/api/web/skills')
+  it('requests card labels even when no search filters are provided', () => {
+    expect(buildSkillSearchUrl({})).toBe('/api/web/skills?include=labels')
   })
 
   it('keeps an empty q parameter when the search query is an empty string', () => {
-    expect(buildSkillSearchUrl({ q: '' })).toBe('/api/web/skills?q=')
+    expect(buildSkillSearchUrl({ q: '' })).toBe('/api/web/skills?include=labels&q=')
   })
 
   it('normalizes whitespace-only queries to an empty q parameter', () => {
@@ -45,7 +45,7 @@ describe('buildSkillSearchUrl', () => {
       q: '   ',
       sort: 'relevance',
       page: 0,
-    })).toBe('/api/web/skills?q=&sort=relevance&page=0')
+    })).toBe('/api/web/skills?include=labels&q=&sort=relevance&page=0')
   })
 })
 

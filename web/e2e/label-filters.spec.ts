@@ -59,6 +59,7 @@ async function mockApi(page: Page) {
       data = definition
     } else if (url.pathname === '/api/web/skills') {
       searchRequests.push(url)
+      expect(url.searchParams.get('include')).toBe('labels')
       const selected = url.searchParams.getAll('label')
       const matching = resources.filter((item) =>
         selected.every((slug) => item.labels.some((label) => label.slug === slug))
@@ -88,6 +89,8 @@ test('grouped filters, clearing, refresh and starred intersection work on deskto
   await expect.poll(() => searchRequests.at(-1)?.searchParams.getAll('label')).toEqual([workflow, role])
   expect(searchRequests.at(-1)?.searchParams.get('labelMode')).toBe('ALL')
   await expect(page.getByText('测试资源 1', { exact: true })).toBeVisible()
+  const firstCard = page.locator('.skill-resource-card').filter({ has: page.getByText('测试资源 1', { exact: true }) })
+  await expect(firstCard.locator('.skill-card-labels li')).toHaveText(['品牌营销', '品牌专员'])
   await expect(page.getByText('测试资源 2', { exact: true })).toHaveCount(0)
   await page.reload()
   await expect(workflows.getByRole('button', { name: '品牌营销', exact: true })).toHaveAttribute('aria-pressed', 'true')
