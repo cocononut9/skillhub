@@ -29,7 +29,8 @@ public record SkillDetailResponse(
         SkillLifecycleVersionResponse ownerPreviewVersion,
         String ownerPreviewReviewComment,
         String resolutionMode,
-        String resourceType
+        String resourceType,
+        List<SkillSuiteReferenceResponse> entryForSuites
 ) {
     public SkillDetailResponse(
             Long id,
@@ -60,6 +61,6 @@ public record SkillDetailResponse(
         this(id, slug, displayName, ownerId, ownerDisplayName, summary, visibility, status, downloadCount,
                 starCount, subscriptionCount, ratingAvg, ratingCount, hidden, namespace, labels,
                 canManageLifecycle, canSubmitPromotion, canInteract, canReport, headlineVersion, publishedVersion,
-                ownerPreviewVersion, ownerPreviewReviewComment, resolutionMode, "SKILL");
+                ownerPreviewVersion, ownerPreviewReviewComment, resolutionMode, "SKILL", List.of());
     }
 }

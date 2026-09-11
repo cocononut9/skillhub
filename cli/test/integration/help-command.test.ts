@@ -20,6 +20,8 @@ describe('help command', () => {
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toContain('Usage: skillhub install <coordinate>')
     expect(result.stdout).toContain('--agent <profile>')
+    expect(result.stdout).toContain('--version <v>')
+    expect(result.stdout).toContain('--registry <url>')
     expect(result.stdout).toContain('@team/my-skill')
     expect(result.stdout).toContain('team/my-skill')
     expect(result.stdout).toContain('team--my-skill')
@@ -31,6 +33,7 @@ describe('help command', () => {
     expect(result.stdout).toContain('Usage: skillhub remove <coordinate>')
     expect(result.stdout).toContain('skillhub remove team/my-skill')
     expect(result.stdout).toContain('skillhub remove my-skill --namespace team')
+    expect(result.stdout).toContain('--registry <url>')
   })
 
   test('prints namespaced local remove contract in --help', async () => {
@@ -45,6 +48,16 @@ describe('help command', () => {
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toContain('Usage: skillhub search [query]')
     expect(result.stdout).toContain('skillhub search')
+  })
+
+  test('states that Suite commands require a compatible registry', async () => {
+    const topic = await runCli(['help', 'suite'])
+    expect(topic.exitCode).toBe(0)
+    expect(topic.stdout).toContain('Manage Skill Suites on compatible registries')
+
+    const root = await runCli(['--help'])
+    expect(root.exitCode).toBe(0)
+    expect(root.stdout).toContain('Manage Skill Suites on compatible registries')
   })
 
   test('distinguishes skill upgrade from CLI self-update and namespace sync', async () => {
@@ -64,6 +77,11 @@ describe('help command', () => {
     expect(sync.stdout).toContain('namespace workspaces')
     expect(sync.stdout).toContain('--namespace <slug>')
     expect(sync.stdout).toContain('--skill <slug>')
+
+    const publish = await runCli(['help', 'publish'])
+    expect(publish.exitCode).toBe(0)
+    expect(publish.stdout).toContain('--dry-run')
+    expect(publish.stdout).toContain('--registry <url>')
   })
 
   // P1: bare `skillhub help` (no topic) prints the directory of all commands

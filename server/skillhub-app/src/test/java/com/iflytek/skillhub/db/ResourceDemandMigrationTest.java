@@ -46,6 +46,37 @@ class ResourceDemandMigrationTest {
                 assertThat(result.next()).isTrue();
                 assertThat(result.getInt(1)).isEqualTo(4);
             }
+
+            var beforeUpstream = Flyway.configure().dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                    .locations("classpath:db/migration").target("54").load();
+            assertThat(beforeUpstream.migrate().migrationsExecuted).isEqualTo(1);
+            sql.executeUpdate("INSERT INTO demand(author_id, title, scenario, expected_result) VALUES ('migration-test', 'Keep demand', 'Keep scenario', 'Keep result')");
+            sql.executeUpdate("INSERT INTO skill_label(skill_id, label_id) SELECT 901, id FROM label_definition WHERE slug='role-brand-specialist'");
+            var checksums = new java.util.LinkedHashMap<String, Integer>();
+            try (var result = sql.executeQuery("SELECT version, checksum FROM flyway_schema_history WHERE version::integer BETWEEN 49 AND 54")) {
+                while (result.next()) checksums.put(result.getString(1), result.getInt(2));
+            }
+            var merged = Flyway.configure().dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                    .locations("classpath:db/migration").load();
+            assertThat(merged.migrate().migrationsExecuted).isEqualTo(5);
+            merged.validate();
+            assertThat(merged.migrate().migrationsExecuted).isZero();
+            try (var result = sql.executeQuery("SELECT version, checksum FROM flyway_schema_history WHERE version::integer BETWEEN 49 AND 54")) {
+                while (result.next()) assertThat(result.getInt(2)).isEqualTo(checksums.get(result.getString(1)));
+            }
+            try (var result = sql.executeQuery("SELECT title FROM demand WHERE author_id='migration-test'")) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getString(1)).isEqualTo("Keep demand");
+            }
+            try (var result = sql.executeQuery("SELECT count(*) FROM skill_label WHERE skill_id=901")) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getInt(1)).isEqualTo(1);
+            }
+            try (var result = sql.executeQuery("SELECT count(*) FROM skill WHERE id IN (901,902) AND resource_type IN ('PLUGIN','PROMPT')")) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getInt(1)).isEqualTo(2);
+            }
+            assertThat(merged.info().current().getVersion().getVersion()).isEqualTo("59");
         }
     }
 }

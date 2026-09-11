@@ -85,7 +85,8 @@ public class ReviewSkillDetailAppService {
                 toLifecycleVersion(snapshot.activeVersion()),
                 null,
                 "REVIEW_TASK",
-                snapshot.skill().getResourceType().name()
+                snapshot.skill().getResourceType().name(),
+                List.of()
         );
 
         List<SkillVersionResponse> versions = snapshot.versions().stream()
