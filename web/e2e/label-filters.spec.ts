@@ -111,7 +111,7 @@ test('grouped filters, clearing, refresh and starred intersection work on deskto
 test('combined homepage shows introduction and search with five navigation entries on desktop and mobile', async ({ page }) => {
   await mockApi(page)
   await page.goto('/')
-  await expect(page).toHaveURL('http://127.0.0.1:3104/')
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/')
   await expect(page.locator('h1')).toBeVisible()
   await expect(page.getByRole('heading', { name: '发现好工具，分享好方法' })).toBeVisible()
   await expect(page.getByRole('group', { name: '流程标签', exact: true })).toBeVisible()
@@ -152,6 +152,41 @@ test('combined homepage keeps public search and login protection for anonymous v
   await page.goto('/dashboard/publish')
   await expect(page).toHaveURL(/\/login\?returnTo=/)
 })
+
+for (const previousLanguage of ['en', 'ru']) {
+  test(`Chinese homepage ignores saved ${previousLanguage} preference and fits narrow signed-in screens`, async ({ page }) => {
+    await mockApi(page)
+    await page.addInitScript((language) => localStorage.setItem('i18nextLng', language), previousLanguage)
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: '发现好工具，分享好方法' })).toBeVisible()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
+    await expect(page.locator('header').getByText(/English|Русский/)).toHaveCount(0)
+
+    for (const width of [320, 375, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 })
+      await page.evaluate(() => document.fonts.ready)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      const controls = page.locator('header > div')
+      const controlsBox = await controls.boundingBox()
+      const brandBox = await page.locator('header > a').boundingBox()
+      expect(controlsBox).not.toBeNull()
+      expect(brandBox).not.toBeNull()
+      expect(controlsBox!.x).toBeGreaterThanOrEqual(brandBox!.x + brandBox!.width)
+      expect(controlsBox!.x + controlsBox!.width).toBeLessThanOrEqual(width)
+    }
+
+    await page.setViewportSize({ width: 320, height: 568 })
+    await page.getByRole('button', { name: '打开导航菜单' }).click()
+    await expect(page.locator('nav:visible').getByRole('link')).toHaveText(['首页', '发布', '需求广场', '控制台', '我的技能'])
+    await page.getByRole('button', { name: '关闭导航菜单' }).click()
+    await page.getByRole('button', { name: /测试管理员/ }).click()
+    await expect(page.getByRole('menu')).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.reload()
+    await expect(page.getByRole('heading', { name: '发现好工具，分享好方法' })).toBeVisible()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
+  })
+}
 
 test('legacy search links preserve filters, query, sort and page on the homepage', async ({ page }) => {
   await mockApi(page)

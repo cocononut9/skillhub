@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test'
-import { setEnglishLocale } from './helpers/auth-fixtures'
 
 test.describe('Light and dark theme', () => {
   test.beforeEach(async ({ page }) => {
-    await setEnglishLocale(page)
     await page.context().setExtraHTTPHeaders({ 'X-Mock-User-Id': 'local-user' })
     await page.route('**/api/v1/auth/me', async (route) => {
       await route.fulfill({
@@ -122,7 +120,7 @@ test.describe('Light and dark theme', () => {
     const header = page.locator('header')
     const lightHeaderBackground = await header.evaluate((element) => getComputedStyle(element).backgroundColor)
 
-    const themeSwitch = page.getByRole('switch', { name: 'Dark theme' })
+    const themeSwitch = page.getByRole('switch', { name: '深色主题' })
     await expect(themeSwitch).toHaveAttribute('aria-checked', 'false')
     await themeSwitch.click()
     await expect(page.locator('html')).toHaveClass(/dark/)
@@ -160,23 +158,23 @@ test.describe('Light and dark theme', () => {
 
     await page.reload()
     await expect(page.locator('html')).toHaveClass(/dark/)
-    await expect(page.getByRole('switch', { name: 'Dark theme' })).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByRole('heading', { name: 'Turn team expertise into Agent-ready skills' })).toBeVisible()
+    await expect(page.getByRole('switch', { name: '深色主题' })).toHaveAttribute('aria-checked', 'true')
+    await expect(page.getByRole('heading', { name: '发现好工具，分享好方法' })).toBeVisible()
     await expect.poll(() => page.evaluate(() => (
       window as Window & { __themeAtFirstReactContent?: boolean }
     ).__themeAtFirstReactContent)).toBe(true)
 
-    await page.getByRole('link', { name: 'Search', exact: true }).first().click()
-    await expect(page).toHaveURL(/\/search(?:\?|$)/)
+    await page.goto('/search')
+    await expect.poll(() => new URL(page.url()).pathname).toBe('/')
     await expect(page.locator('html')).toHaveClass(/dark/)
-    await expect(page.getByPlaceholder('Search skills...')).toBeVisible()
+    await expect(page.getByPlaceholder('搜索技能...')).toBeVisible()
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await page.screenshot({ path: testInfo.outputPath('dark-desktop.png'), fullPage: true })
 
-    const notificationButton = page.getByRole('button', { name: 'Notifications' })
+    const notificationButton = page.getByRole('button', { name: '通知' })
     await notificationButton.click()
-    await expect(page.getByText('Notifications', { exact: true })).toBeVisible()
-    const firstNotification = page.getByRole('link').filter({ hasText: 'Review submitted' })
+    await expect(page.getByText('通知', { exact: true })).toBeVisible()
+    const firstNotification = page.getByRole('link').filter({ hasText: '技能审核提交' })
     await expect(firstNotification).toBeVisible()
     const backgroundBeforeHover = await firstNotification.evaluate((element) => getComputedStyle(element).backgroundColor)
     await firstNotification.hover()
@@ -186,7 +184,7 @@ test.describe('Light and dark theme', () => {
     await notificationButton.click()
 
     await page.setViewportSize({ width: 390, height: 844 })
-    await expect(page.getByRole('switch', { name: 'Dark theme' })).toBeVisible()
+    await expect(page.getByRole('switch', { name: '深色主题' })).toBeVisible()
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await page.screenshot({ path: testInfo.outputPath('dark-mobile.png'), fullPage: true })
 

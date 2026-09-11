@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { Menu, X } from 'lucide-react'
 import { useAuth } from '@/features/auth/use-auth'
 import { BrandMark } from '@/shared/components/brand-mark'
-import { LanguageSwitcher } from '@/shared/components/language-switcher'
 import { ThemeToggle } from '@/shared/components/theme-toggle'
 import { UserMenu } from '@/shared/components/user-menu'
 import { NotificationBell } from '@/features/notification/notification-bell'
@@ -20,7 +19,7 @@ const FOOTER_LINK_CLASS_NAME = 'group relative inline-flex py-0.5 transition-col
 /**
  * Application shell shared by all routed pages.
  *
- * It owns the global header, footer, language switcher, auth-aware navigation, and suspense
+ * It owns the global header, footer, auth-aware navigation, and suspense
  * fallback used while lazy route modules are loading.
  */
 export function Layout() {
@@ -115,7 +114,7 @@ export function Layout() {
       {/* Header */}
       <header className={getAppHeaderClassName(isHeaderElevated)} style={{ borderColor: 'hsl(var(--border))' }}>
         <Link to="/" className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl font-semibold tracking-tight flex-shrink-0" style={{ color: 'hsl(var(--foreground))' }}>
-          <BrandMark className="h-6 w-14 sm:h-8 sm:w-[88px]" />
+          <BrandMark className="h-6 w-12 sm:h-8 sm:w-[88px]" />
           <span className="border-l border-border pl-2 sm:pl-3">SkillHub</span>
         </Link>
 
@@ -156,7 +155,6 @@ export function Layout() {
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <ThemeToggle />
-          <LanguageSwitcher className="px-2 sm:px-3" />
           {user && <NotificationBell />}
           {isLoading ? null : user ? (
             <UserMenu user={user} />

@@ -227,7 +227,7 @@ describe('SearchPage', () => {
   it('selects a resource type while preserving filters and resetting the page', () => {
     renderToStaticMarkup(<SearchPage />)
     findButton('webResource.type').onClick?.()
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/search', search: {
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/', search: {
       q: 'agent', namespace: 'team-ai', label: 'code-generation', resourceType: 'WEB', sort: 'downloads', page: 0, starredOnly: false,
     } })
   })
@@ -279,7 +279,7 @@ describe('SearchPage', () => {
     findButton('Code Generation').onClick?.()
 
     expect(navigateMock).toHaveBeenCalledWith({
-      to: '/search',
+      to: '/',
       search: {
         q: 'agent',
         namespace: 'team-ai',
@@ -297,7 +297,7 @@ describe('SearchPage', () => {
     findButton('search.sort.newest').onClick?.()
 
     expect(navigateMock).toHaveBeenCalledWith({
-      to: '/search',
+      to: '/',
       search: {
         q: 'agent',
         namespace: 'team-ai',
@@ -316,7 +316,7 @@ describe('SearchPage', () => {
     findButton('search.filterStarred').onClick?.()
 
     expect(navigateMock).toHaveBeenNthCalledWith(1, {
-      to: '/search',
+      to: '/',
       search: {
         q: 'agent',
         namespace: 'team-ai',
@@ -327,7 +327,7 @@ describe('SearchPage', () => {
       },
     })
     expect(navigateMock).toHaveBeenNthCalledWith(2, {
-      to: '/search',
+      to: '/',
       search: {
         q: 'agent',
         namespace: 'team-ai',
@@ -358,7 +358,7 @@ describe('SearchPage', () => {
     searchBarProps[0]?.onSearch?.('@product-team onboarding')
 
     expect(navigateMock).toHaveBeenCalledWith({
-      to: '/search',
+      to: '/',
       search: {
         q: 'onboarding',
         namespace: 'product-team',
