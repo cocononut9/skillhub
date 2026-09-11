@@ -4,32 +4,6 @@ import { CliError } from '../../../src/shared/errors'
 import { EXIT } from '../../../src/shared/constants'
 
 describe('SkillHubClient', () => {
-  test('reports a Codex skill usage event with bearer authentication', async () => {
-    const fetchImpl = (async (input: URL | RequestInfo, init?: RequestInit) => {
-      expect(String(input)).toBe('http://registry.test/api/cli/v1/skill-usage-events')
-      expect(init?.method).toBe('POST')
-      expect(init?.headers).toMatchObject({ Authorization: 'Bearer token', 'Content-Type': 'application/json' })
-      expect(JSON.parse(String(init?.body))).toMatchObject({
-        eventId: 'a'.repeat(64),
-        namespace: 'team',
-        slug: 'demo',
-        evidenceType: 'SCRIPT_EXECUTED'
-      })
-      return Response.json({ data: { accepted: true } })
-    }) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
-
-    await expect(client.reportSkillUsage({
-      eventId: 'a'.repeat(64),
-      namespace: 'team',
-      slug: 'demo',
-      version: '1.0.0',
-      client: 'CODEX',
-      evidenceType: 'SCRIPT_EXECUTED',
-      occurredAt: '2026-09-09T03:00:00Z'
-    })).resolves.toEqual({ accepted: true })
-  })
-
   test('uses the provided multipart file name when publishing', async () => {
     const fetchImpl = (async (_input: URL | RequestInfo, init?: RequestInit) => {
       const formData = init?.body as FormData

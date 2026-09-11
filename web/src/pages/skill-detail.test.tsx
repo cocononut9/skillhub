@@ -192,10 +192,6 @@ vi.mock('@/features/social/star-button', () => ({
 
 vi.mock('@/shared/hooks/use-skill-queries', () => ({
   useSkillDetail: () => useSkillDetailMock(),
-  useSkillUsageStats: () => ({
-    data: { usageCount: 8, uniqueUserCount: 3, repeatUserCount: 1, windowDays: 30 },
-    isLoading: false,
-  }),
   useSkillLabels: () => useSkillLabelsMock(),
   useVisibleLabels: () => ({
     data: [{ slug: 'code-generation', type: 'RECOMMENDED', displayName: 'Code Generation' }],
@@ -316,6 +312,15 @@ describe('SkillDetailPage', () => {
     useSkillFilesMock.mockReturnValue({ data: [] })
     useSkillReadmeMock.mockReturnValue({ data: '# Demo', error: null })
     useSkillFileMock.mockReturnValue({ data: null, isLoading: false, error: null })
+  })
+
+  it('keeps Skill downloads and ratings without Codex usage statistics', () => {
+    render(<SkillDetailPage />)
+    expect(screen.getByText('skillDetail.downloads')).toBeTruthy()
+    expect(screen.getByText('skillDetail.rating')).toBeTruthy()
+    expect(screen.queryByText('skillDetail.usageCount30Days')).toBeNull()
+    expect(screen.queryByText('skillDetail.uniqueUsers30Days')).toBeNull()
+    expect(screen.queryByText('skillDetail.usageCoverageHint')).toBeNull()
   })
 
   it('shows prompt content and Markdown download without Skill installation', () => {

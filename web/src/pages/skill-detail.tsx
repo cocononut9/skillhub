@@ -53,7 +53,6 @@ import { toast } from '@/shared/lib/toast'
 import { cn } from '@/shared/lib/utils'
 import {
   useSkillDetail,
-  useSkillUsageStats,
   useSkillVersions,
   useSkillVersionDetail,
   useSkillFiles,
@@ -166,7 +165,6 @@ export function SkillDetailPage() {
   const qslug = detailQueriesEnabled ? slug : ''
   const { data: skill, isLoading: isLoadingSkill, isFetching: isFetchingSkill, error: skillError } = useSkillDetail(qns, qslug, detailQueriesEnabled)
   const skillReady = detailQueriesEnabled && Boolean(skill) && !isLoadingSkill && !isFetchingSkill && !skillError
-  const { data: usageStats } = useSkillUsageStats(qns, qslug, 30, skillReady && (!skill?.resourceType || skill.resourceType === 'SKILL'))
   const { data: versions } = useSkillVersions(qns, qslug, skillReady)
   const headlineVersion = skill ? getHeadlineVersion(skill) : null
   const publishedVersion = skill ? getPublishedVersion(skill) : null
@@ -1155,30 +1153,6 @@ export function SkillDetailPage() {
           </div>
 
           <div className="h-px bg-border/40" />
-
-          {isSkillResource && <>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">{t('skillDetail.usageCount30Days')}</div>
-            <div className="font-semibold text-foreground">
-              {usageStats ? formatCompactCount(usageStats.usageCount) : '—'}
-            </div>
-          </div>
-
-          <div className="h-px bg-border/40" />
-
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">{t('skillDetail.uniqueUsers30Days')}</div>
-            <div className="font-semibold text-foreground">
-              {usageStats ? formatCompactCount(usageStats.uniqueUserCount) : '—'}
-            </div>
-          </div>
-
-          <div className="text-xs leading-relaxed text-muted-foreground">
-            {t('skillDetail.usageCoverageHint')}
-          </div>
-
-          <div className="h-px bg-border/40" />
-          </>}
 
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">{t('skillDetail.rating')}</div>

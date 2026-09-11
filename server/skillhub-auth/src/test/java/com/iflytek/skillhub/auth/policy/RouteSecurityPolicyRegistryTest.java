@@ -147,7 +147,6 @@ class RouteSecurityPolicyRegistryTest {
     @Test
     void apiTokenPolicySupportsNativeCliRoutes() {
         assertTrue(registry.authorizeApiToken("GET", "/api/cli/v1/auth/whoami", Set.of()).allowed());
-        assertTrue(registry.authorizeApiToken("POST", "/api/cli/v1/skill-usage-events", Set.of()).allowed());
         assertTrue(registry.authorizeApiToken("GET", "/api/cli/v1/namespaces/team-a/skills", Set.of()).allowed());
         assertTrue(registry.authorizeApiToken("GET", "/api/cli/v1/skills/search", Set.of()).allowed());
         assertTrue(registry.authorizeApiToken("GET", "/api/cli/v1/skills/global/demo/resolve", Set.of()).allowed());
@@ -156,14 +155,6 @@ class RouteSecurityPolicyRegistryTest {
         assertFalse(registry.authorizeApiToken("POST", "/api/cli/v1/skills/global/publish/validate", Set.of()).allowed());
         assertTrue(registry.authorizeApiToken("POST", "/api/cli/v1/skills/global/publish/validate", Set.of("skill:publish")).allowed());
         assertTrue(registry.authorizeApiToken("DELETE", "/api/cli/v1/skills/global/demo", Set.of("skill:delete")).allowed());
-    }
-
-    @Test
-    void usageStatsArePublicButUsageIngestionRequiresAuthentication() {
-        assertEquals(RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL,
-                registry.accessLevel("GET", "/api/web/skills/team/demo/usage-stats"));
-        assertEquals(RouteSecurityPolicyRegistry.AccessLevel.AUTHENTICATED,
-                registry.accessLevel("POST", "/api/cli/v1/skill-usage-events"));
     }
 
     @Test

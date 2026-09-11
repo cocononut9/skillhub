@@ -309,16 +309,6 @@ export interface SkillDetail {
   resolutionMode?: string
 }
 
-export interface SkillUsageStats {
-  windowDays: number
-  usageCount: number
-  uniqueUserCount: number
-  repeatUserCount: number
-  client: 'CODEX' | string
-  evidenceTypes: Array<'EXPLICIT_INVOCATION' | 'SCRIPT_EXECUTED' | string>
-  coverage: string
-}
-
 export interface SubmitPromotionRequest {
   sourceSkillId: number
   sourceVersionId: number

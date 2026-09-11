@@ -2132,22 +2132,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/cli/v1/skill-usage-events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["ingest"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/user/profile": {
         parameters: {
             query?: never;
@@ -2396,38 +2380,6 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listVersions_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/web/skills/{namespace}/{slug}/usage-stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["getStats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/skills/{namespace}/{slug}/usage-stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["getStats_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4816,28 +4768,6 @@ export interface components {
             resolvedSlug?: string;
             resolvedVersion?: string;
         };
-        CliSkillUsageEventRequest: {
-            eventId: string;
-            namespace: string;
-            slug: string;
-            version: string;
-            client: string;
-            evidenceType: string;
-            /** Format: date-time */
-            occurredAt: string;
-        };
-        ApiResponseCliSkillUsageEventResponse: {
-            /** Format: int32 */
-            code?: number;
-            msg?: string;
-            data?: components["schemas"]["CliSkillUsageEventResponse"];
-            /** Format: date-time */
-            timestamp?: string;
-            requestId?: string;
-        };
-        CliSkillUsageEventResponse: {
-            accepted?: boolean;
-        };
         UpdateProfileRequest: {
             displayName?: string;
         };
@@ -5107,28 +5037,6 @@ export interface components {
             publishedAt?: string;
             downloadAvailable?: boolean;
             complianceSnapshot?: components["schemas"]["ComplianceSnapshotResponse"];
-        };
-        ApiResponseSkillUsageStatsResponse: {
-            /** Format: int32 */
-            code?: number;
-            msg?: string;
-            data?: components["schemas"]["SkillUsageStatsResponse"];
-            /** Format: date-time */
-            timestamp?: string;
-            requestId?: string;
-        };
-        SkillUsageStatsResponse: {
-            /** Format: int32 */
-            windowDays?: number;
-            /** Format: int64 */
-            usageCount?: number;
-            /** Format: int64 */
-            uniqueUserCount?: number;
-            /** Format: int64 */
-            repeatUserCount?: number;
-            client?: string;
-            evidenceTypes?: string[];
-            coverage?: string;
         };
         ApiResponseListTagResponse: {
             /** Format: int32 */
@@ -10783,30 +10691,6 @@ export interface operations {
             };
         };
     };
-    ingest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CliSkillUsageEventRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseCliSkillUsageEventResponse"];
-                };
-            };
-        };
-    };
     getProfile: {
         parameters: {
             query?: never;
@@ -11277,56 +11161,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponsePageResponseSkillVersionResponse"];
-                };
-            };
-        };
-    };
-    getStats: {
-        parameters: {
-            query?: {
-                days?: number;
-            };
-            header?: never;
-            path: {
-                namespace: string;
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseSkillUsageStatsResponse"];
-                };
-            };
-        };
-    };
-    getStats_1: {
-        parameters: {
-            query?: {
-                days?: number;
-            };
-            header?: never;
-            path: {
-                namespace: string;
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseSkillUsageStatsResponse"];
                 };
             };
         };

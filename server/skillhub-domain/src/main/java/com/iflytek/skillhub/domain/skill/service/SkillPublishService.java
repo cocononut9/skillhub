@@ -202,15 +202,17 @@ public class SkillPublishService {
         }
 
         SkillMetadata metadata;
+        ResourceType resourceType;
         try {
             metadata = parsePackageMetadata(entries);
+            resourceType = resolveResourceType(entries);
         } catch (Exception e) {
             errors.add("Invalid package metadata: " + e.getMessage());
             return new DryRunResult(false, errors, warnings, null, null);
         }
 
         if (visibility == SkillVisibility.PRIVATE
-                && new PromptResourceMetadataParser().parse(entries).isPresent() && !securityScanService.isEnabled()) {
+                && resourceType.requiresContentScan() && !securityScanService.isEnabled()) {
             errors.add("error.security.scanner.required");
         }
         try {
@@ -245,6 +247,9 @@ public class SkillPublishService {
             List<Skill> existingSkills = skillRepository.findByNamespaceIdAndSlug(namespace.getId(), resolvedSlug);
             for (Skill existing : existingSkills) {
                 if (existing.getOwnerId().equals(publisherId)) {
+                    if (existing.getResourceType() != resourceType) {
+                        errors.add("error.resource.type.immutable");
+                    }
                     if (existing.getStatus() == SkillStatus.ARCHIVED) {
                         errors.add("Cannot publish to archived skill: " + resolvedSlug);
                     }
@@ -373,9 +378,7 @@ public class SkillPublishService {
         }
 
         SkillMetadata metadata = parsePackageMetadata(entries);
-        ResourceType resourceType = new PromptResourceMetadataParser().parse(entries).isPresent() ? ResourceType.PROMPT
-                : new PluginResourceMetadataParser().parse(entries).isPresent() ? ResourceType.PLUGIN
-                : webMetadataParser.parse(entries).isPresent() ? ResourceType.WEB : ResourceType.SKILL;
+        ResourceType resourceType = resolveResourceType(entries);
         Presentation presentation = resolvePresentation(entries, metadata);
         if (metadata.version() == null || metadata.version().isBlank()) {
             String autoVersion = AUTO_VERSION_FORMATTER.format(currentTime());
@@ -787,6 +790,12 @@ public class SkillPublishService {
         parsedMetadata.put("frontmatter", metadata.frontmatter());
         parsedMetadata.put(ComplianceMetadataService.SNAPSHOT_FIELD_NAME, complianceSnapshot);
         return parsedMetadata;
+    }
+
+    private ResourceType resolveResourceType(List<PackageEntry> entries) {
+        return new PromptResourceMetadataParser().parse(entries).isPresent() ? ResourceType.PROMPT
+                : new PluginResourceMetadataParser().parse(entries).isPresent() ? ResourceType.PLUGIN
+                : webMetadataParser.parse(entries).isPresent() ? ResourceType.WEB : ResourceType.SKILL;
     }
 
     private SkillMetadata parsePackageMetadata(List<PackageEntry> entries) {

@@ -2,6 +2,19 @@ import { describe, expect, test } from 'bun:test'
 import { runCli } from '../helpers/run-cli'
 
 describe('help command', () => {
+  test('omits telemetry from help and rejects the removed collector command', async () => {
+    const help = await runCli(['help', '--json'])
+    expect(help.exitCode).toBe(0)
+    expect(help.stdout).not.toContain('telemetry')
+
+    const result = await runCli(['telemetry', 'hook', '--json'])
+    expect(result.exitCode).toBe(5)
+    expect(JSON.parse(result.stderr)).toMatchObject({
+      ok: false,
+      message: 'unknown command "telemetry" for "skillhub"',
+    })
+  })
+
   test('prints detailed help for install', async () => {
     const result = await runCli(['help', 'install'])
     expect(result.exitCode).toBe(0)
