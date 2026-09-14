@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    /* 银灰蓝：浅色表面、千岸深蓝文字与蓝色操作按钮。 */
-    --background: 210 38% 97%;
+    /* 白色为主的浅色表面，配合深蓝文字和清晰的控件边界。 */
+    --background: 210 20% 99%;
     --foreground: 215 100% 20%;
     --card: 0 0% 100%;
     --card-foreground: 215 100% 20%;
     --popover: 0 0% 100%;
     --popover-foreground: 215 100% 20%;
-    --primary: 216 100% 35%;
+    --primary: 216 100% 32%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 213 45% 96%;
-    --secondary-foreground: 216 35% 35%;
-    --muted: 213 35% 94%;
-    --muted-foreground: 216 24% 43%;
-    --accent: 212 90% 94%;
+    --secondary: 214 25% 97%;
+    --secondary-foreground: 216 35% 30%;
+    --muted: 214 20% 95%;
+    --muted-foreground: 216 24% 35%;
+    --accent: 212 80% 92%;
     --accent-foreground: 216 100% 32%;
     --destructive: 0 55% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 55% 87%;
-    --input: 214 45% 88%;
+    --border: 214 30% 78%;
+    --input: 214 28% 70%;
     --ring: 216 90% 48%;
     --radius: 0.625rem;
     --surface-glass: 0 0% 100%;
@@ -33,12 +33,12 @@
     --brand-start: #0052b8;
     --brand-end: #002b68;
     --brand-gradient: linear-gradient(135deg, var(--brand-start), var(--brand-end));
-    --text-secondary: 216 32% 37%;
-    --text-muted: 216 24% 43%;
-    --text-placeholder: 216 22% 46%;
-    --border-card: 214 55% 87%;
-    --shadow-card: 0 2px 8px 0 rgb(0 43 104 / 0.04);
-    --shadow-card-hover: 0 6px 18px 0 rgb(0 43 104 / 0.09);
+    --text-secondary: 216 32% 32%;
+    --text-muted: 216 24% 35%;
+    --text-placeholder: 216 22% 40%;
+    --border-card: 214 30% 78%;
+    --shadow-card: 0 2px 8px 0 rgb(0 43 104 / 0.06);
+    --shadow-card-hover: 0 6px 18px 0 rgb(0 43 104 / 0.12);
     --shadow-btn-primary: 0 2px 5px 0 rgb(0 43 104 / 0.12);
   }
 
@@ -201,7 +201,7 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: linear-gradient(125deg, hsl(210 70% 97%), hsl(212 65% 95%), hsl(210 50% 97%));
+  background: linear-gradient(125deg, hsl(210 40% 99%), hsl(212 45% 97%), hsl(210 30% 99%));
 }
 
 .brand-hero::before {
@@ -224,7 +224,7 @@
   bottom: 24px;
   width: 160px;
   height: 110px;
-  opacity: 0.22;
+  opacity: 0.42;
   pointer-events: none;
   background-color: #7da6d6;
   mask: url('./shared/assets/1000shores-symbol.svg') center / contain no-repeat;
@@ -286,7 +286,7 @@
 .dark .skill-resource-card[data-resource-type='PROMPT'] .shrink-0.bg-secondary { background: #302443; color: #cab7ff; }
 
 @media (max-width: 639px) {
-  .brand-hero::after { width: 88px; height: 61px; opacity: 0.16; }
+  .brand-hero::after { width: 88px; height: 61px; opacity: 0.3; }
 }
 
 /* ─── Dot-grid background texture ─── */
@@ -772,19 +772,19 @@
 .dark .tag-blue   { background: hsl(215 40% 18%); color: hsl(215 50% 76%); }
 .dark .tag-green  { background: hsl(155 40% 16%); color: hsl(155 50% 68%); }
 
-/* ─── Card hover（对齐 TabTin hsl(214 70% 96%)，无位移） ─── */
+/* 卡片悬停沿用主题表面与边框。 */
 .card-hover {
   transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 .card-hover:hover {
-  background: hsl(214 70% 96%);
+  background: hsl(var(--secondary));
   box-shadow: 0 4px 12px 0 rgb(0 0 0 / 0.06);
-  border-color: hsl(214 50% 88%);
+  border-color: hsl(var(--border-card));
 }
 
-/* ─── Container / 选中项模型（淡蓝 tint，对齐 TabTin） ─── */
+/* 容器与选中项保持清晰的表面层次。 */
 .container-tray {
-  background: hsl(214 70% 97%);
+  background: hsl(var(--secondary));
   border-radius: 0.5rem;
   padding: 0.25rem;
 }
