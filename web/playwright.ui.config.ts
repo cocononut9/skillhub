@@ -9,5 +9,6 @@ export default defineConfig({
     'landing-navigation.spec.ts',
     'auth-entry.spec.ts',
     'theme-toggle.spec.ts',
+    'dashboard-shell.spec.ts',
   ],
 })

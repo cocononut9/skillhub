@@ -22,4 +22,12 @@ test.describe('Landing Navigation (Real API)', () => {
     await page.getByRole('link', { name: '发布技能', exact: true }).click()
     await expect(page).toHaveURL(/\/login\?returnTo=%2Fdashboard%2Fpublish$/)
   })
+
+  test('keeps the landing page within a 390px viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+
+    await expect(page.getByRole('heading', { name: '发现好工具，分享好方法' })).toBeVisible()
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  })
 })
