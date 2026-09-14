@@ -261,7 +261,7 @@ export function SearchPage() {
     : (data?.total ?? 0)
 
   return (
-    <div className={APP_SHELL_PAGE_CLASS_NAME}>
+    <div className={`discovery-page ${APP_SHELL_PAGE_CLASS_NAME}`}>
       <section className="brand-hero rounded-2xl border border-primary/10 px-6 py-7 sm:px-8 sm:py-8" aria-labelledby="discovery-heading">
         <p className="brand-eyebrow mb-2 text-xs font-semibold tracking-[0.2em] text-primary">SKILLHUB</p>
         <h1 id="discovery-heading" className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">

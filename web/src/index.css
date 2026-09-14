@@ -286,6 +286,42 @@
 .dark .skill-resource-card[data-resource-type='PLUGIN'] .shrink-0.bg-secondary { background: #193d32; color: #99e5cc; }
 .dark .skill-resource-card[data-resource-type='PROMPT'] .shrink-0.bg-secondary { background: #302443; color: #cab7ff; }
 
+/* 夜间首页用中灰蓝内容框降低亮度，同时与深色页面底保持区分。 */
+.dark .discovery-page :is(.brand-hero, form, .search-filters button, .skill-resource-card) {
+  --background: 216 18% 23%;
+  --foreground: 213 25% 90%;
+  --card: 216 18% 23%;
+  --card-foreground: 213 25% 90%;
+  --primary: 214 65% 73%;
+  --primary-foreground: 216 45% 16%;
+  --secondary: 216 18% 29%;
+  --secondary-foreground: 213 22% 85%;
+  --muted-foreground: 213 18% 75%;
+  --accent: 215 30% 37%;
+  --accent-foreground: 213 30% 94%;
+  --border: 216 17% 37%;
+  --ring: 214 60% 70%;
+  color: hsl(var(--foreground));
+}
+
+.dark .discovery-page .brand-hero {
+  background: linear-gradient(125deg, #303b4b, #38475a, #303c4b);
+}
+
+.dark .discovery-page .skill-resource-card:hover {
+  background: #3b4758;
+  border-color: #758aa6;
+}
+
+.dark .discovery-page .resource-icon { filter: brightness(1.35); }
+.dark .discovery-page .skill-resource-card::before { opacity: 1; }
+.dark .discovery-page .skill-resource-card[data-resource-type='WEB'] .shrink-0.bg-secondary { background: #4b4434; color: #ecd098; }
+.dark .discovery-page .skill-resource-card[data-resource-type='PLUGIN'] .shrink-0.bg-secondary { background: #294a44; color: #9ad8c5; }
+.dark .discovery-page .skill-resource-card[data-resource-type='PROMPT'] .shrink-0.bg-secondary { background: #45405b; color: #c9b7ee; }
+.dark .discovery-page .skill-resource-card .text-amber-600 { color: #eec779; }
+.dark .discovery-page .skill-resource-card .text-blue-700 { color: #94bdff; }
+.dark .discovery-page .skill-resource-card .text-emerald-700 { color: #85d8bf; }
+
 @media (max-width: 639px) {
   .brand-hero::after { width: 88px; opacity: 0.16; }
 }
