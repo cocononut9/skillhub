@@ -17,7 +17,6 @@ import com.iflytek.skillhub.domain.skill.SkillVersionRepository;
 import com.iflytek.skillhub.domain.skill.SkillVersionStatus;
 import com.iflytek.skillhub.domain.skill.SkillVisibility;
 import com.iflytek.skillhub.domain.skill.service.SkillGovernanceService;
-import com.iflytek.skillhub.domain.skill.metadata.SkillMetadata;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -31,12 +30,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -234,9 +233,12 @@ class ReviewServiceTest {
             skill.setDisplayName("Published Name");
             skill.setSummary("Published Summary");
             skill.setUpdatedBy("previous-reviewer");
-            assertDoesNotThrow(() -> sv.setParsedMetadataJson(objectMapper.writeValueAsString(
-                    new SkillMetadata("Approved Name", "Approved Summary", "1.0.0", "Body", Map.of())
-            )));
+            assertDoesNotThrow(() -> sv.setParsedMetadataJson(objectMapper.writeValueAsString(Map.of(
+                    "name", "approved-name",
+                    "description", "Approved Summary",
+                    "displayName", "审核后的中文名称",
+                    "summary", "审核后展示的一句话简介"
+            ))));
 
             when(reviewTaskRepository.findById(REVIEW_TASK_ID)).thenReturn(Optional.of(task));
             when(namespaceRepository.findById(NAMESPACE_ID)).thenReturn(Optional.of(ns));
@@ -262,11 +264,41 @@ class ReviewServiceTest {
             assertEquals(SkillVersionStatus.PUBLISHED, sv.getStatus());
             assertEquals(Instant.now(CLOCK), sv.getPublishedAt());
             assertEquals(SKILL_VERSION_ID, skill.getLatestVersionId());
-            assertEquals("Approved Name", skill.getDisplayName());
-            assertEquals("Approved Summary", skill.getSummary());
+            assertEquals("审核后的中文名称", skill.getDisplayName());
+            assertEquals("审核后展示的一句话简介", skill.getSummary());
             assertEquals(REVIEWER_ID, skill.getUpdatedBy());
             verify(eventPublisher).publishEvent(any(SkillPublishedEvent.class));
             verify(governanceNotificationService).notifyUser(eq(USER_ID), eq("REVIEW"), eq("REVIEW_TASK"), eq(REVIEW_TASK_ID), eq("Review approved"), any());
+        }
+
+        @Test
+        void shouldUseSkillMetadataAsPresentationFallbackForLegacyVersion() {
+            ReviewTask task = createPendingReviewTask();
+            Namespace ns = createTeamNamespace();
+            SkillVersion sv = createPendingReviewSkillVersion();
+            Skill skill = createSkill();
+            assertDoesNotThrow(() -> sv.setParsedMetadataJson(objectMapper.writeValueAsString(Map.of(
+                    "name", "legacy-name",
+                    "description", "Legacy description"
+            ))));
+
+            when(reviewTaskRepository.findById(REVIEW_TASK_ID)).thenReturn(Optional.of(task));
+            when(namespaceRepository.findById(NAMESPACE_ID)).thenReturn(Optional.of(ns));
+            when(permissionChecker.canReview(eq(task), eq(REVIEWER_ID), eq(ns.getType()), anyMap(), anySet()))
+                    .thenReturn(true);
+            when(reviewTaskRepository.updateStatusWithVersion(
+                    REVIEW_TASK_ID, ReviewTaskStatus.APPROVED, REVIEWER_ID, "LGTM", task.getVersion()))
+                    .thenReturn(1);
+            when(skillVersionRepository.findById(SKILL_VERSION_ID)).thenReturn(Optional.of(sv));
+            when(skillRepository.findById(SKILL_ID)).thenReturn(Optional.of(skill));
+            when(skillRepository.findByNamespaceIdAndSlug(NAMESPACE_ID, "my-skill")).thenReturn(List.of(skill));
+
+            reviewService.approveReview(
+                    REVIEW_TASK_ID, REVIEWER_ID, "LGTM",
+                    Map.of(NAMESPACE_ID, NamespaceRole.ADMIN), Set.of());
+
+            assertEquals("legacy-name", skill.getDisplayName());
+            assertEquals("Legacy description", skill.getSummary());
         }
 
         @Test
@@ -532,6 +564,7 @@ class ReviewServiceTest {
             when(namespaceRepository.findById(NAMESPACE_ID)).thenReturn(Optional.of(ns));
             when(permissionChecker.canReview(any(), any(), any(), anyMap(), anySet())).thenReturn(true);
             when(skillVersionRepository.findById(SKILL_VERSION_ID)).thenReturn(Optional.of(sv));
+            when(skillRepository.findById(SKILL_ID)).thenReturn(Optional.of(createSkill()));
             when(reviewTaskRepository.updateStatusWithVersion(any(), any(), any(), any(), any())).thenReturn(0);
 
             assertThrows(ConcurrentModificationException.class,

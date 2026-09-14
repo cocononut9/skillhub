@@ -19,6 +19,7 @@ const useSkillVersionsMock = vi.fn()
 const useSkillFilesMock = vi.fn()
 const useSkillReadmeMock = vi.fn()
 const useSkillFileMock = vi.fn()
+const useSkillVersionDetailMock = vi.fn()
 let authState: {
   user: { userId: string; platformRoles: string[] } | null
   hasRole: (role: string) => boolean
@@ -200,7 +201,7 @@ vi.mock('@/shared/hooks/use-skill-queries', () => ({
   useAttachSkillLabel: () => ({ mutate: vi.fn(), isPending: false }),
   useDetachSkillLabel: () => ({ mutate: vi.fn(), isPending: false }),
   useSkillVersions: (...args: unknown[]) => useSkillVersionsMock(...args),
-  useSkillVersionDetail: () => ({ data: undefined }),
+  useSkillVersionDetail: (...args: unknown[]) => useSkillVersionDetailMock(...args),
   useSkillFiles: (...args: unknown[]) => useSkillFilesMock(...args),
   useSkillReadme: (...args: unknown[]) => useSkillReadmeMock(...args),
   useSkillFile: (...args: unknown[]) => useSkillFileMock(...args),
@@ -277,6 +278,7 @@ describe('SkillDetailPage', () => {
     useSkillFilesMock.mockReset()
     useSkillReadmeMock.mockReset()
     useSkillFileMock.mockReset()
+    useSkillVersionDetailMock.mockReturnValue({ data: undefined })
     toastMocks.success.mockReset()
     toastMocks.error.mockReset()
     hasRoleMock.mockImplementation((role: string) => role === 'USER')
@@ -310,6 +312,50 @@ describe('SkillDetailPage', () => {
     useSkillFilesMock.mockReturnValue({ data: [] })
     useSkillReadmeMock.mockReturnValue({ data: '# Demo', error: null })
     useSkillFileMock.mockReturnValue({ data: null, isLoading: false, error: null })
+  })
+
+  it('keeps Skill downloads and ratings without Codex usage statistics', () => {
+    render(<SkillDetailPage />)
+    expect(screen.getByText('skillDetail.downloads')).toBeTruthy()
+    expect(screen.getByText('skillDetail.rating')).toBeTruthy()
+    expect(screen.queryByText('skillDetail.usageCount30Days')).toBeNull()
+    expect(screen.queryByText('skillDetail.uniqueUsers30Days')).toBeNull()
+    expect(screen.queryByText('skillDetail.usageCoverageHint')).toBeNull()
+  })
+
+  it('shows prompt content and Markdown download without Skill installation', () => {
+    useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'PROMPT' }), isLoading: false })
+    render(<SkillDetailPage />)
+    expect(screen.getByRole('button', { name: 'promptResource.download' })).toBeTruthy()
+    expect(screen.queryByText('skillDetail.usageCount30Days')).toBeNull()
+    expect(screen.queryByText('skillDetail.install')).toBeNull()
+  })
+
+  it('offers a plugin installer without Skill installation controls', () => {
+    useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'PLUGIN' }), isLoading: false })
+    render(<SkillDetailPage />)
+    expect(screen.getByRole('button', { name: 'pluginResource.download' })).toBeTruthy()
+    expect(screen.queryByText('skillDetail.usageCount30Days')).toBeNull()
+    expect(screen.queryByText('skillDetail.install')).toBeNull()
+  })
+
+  it('opens a published website in a new tab and omits skill installation', () => {
+    useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'WEB' }), isLoading: false })
+    useSkillVersionDetailMock.mockReturnValue({ data: { parsedMetadataJson: JSON.stringify({ frontmatter: { resourceType: 'WEB', websiteUrl: 'https://example.com/tool' } }) } })
+    render(<SkillDetailPage />)
+    const link = screen.getByRole('link', { name: 'webResource.open' })
+    expect(link.getAttribute('href')).toBe('https://example.com/tool')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(screen.queryByText('skillDetail.install')).toBeNull()
+    expect(screen.queryByText('skillDetail.download')).toBeNull()
+  })
+
+  it('does not offer an archived website link', () => {
+    useSkillDetailMock.mockReturnValue({ data: createSkill({ resourceType: 'WEB', status: 'ARCHIVED' }), isLoading: false })
+    useSkillVersionDetailMock.mockReturnValue({ data: { parsedMetadataJson: JSON.stringify({ frontmatter: { resourceType: 'WEB', websiteUrl: 'https://example.com/tool' } }) } })
+    render(<SkillDetailPage />)
+    expect(screen.queryByRole('link', { name: 'webResource.open' })).toBeNull()
   })
 
   it('shows hard delete action for the skill owner', () => {
@@ -353,6 +399,37 @@ describe('SkillDetailPage', () => {
     expect(html).toContain('install')
     expect(html).not.toContain('skillDetail.loginRequired')
     expect(html).not.toContain('skillDetail.deleteSkill')
+  })
+
+  it('recommends visible suites that use this skill as their entry', () => {
+    useSkillDetailMock.mockReturnValue({
+      data: createSkill({
+        entryForSuites: [{
+          suiteId: 7,
+          namespace: 'team-ai',
+          slug: 'research-workflow',
+          displayName: 'Research Workflow',
+          version: '2.0.0',
+          memberCount: 4,
+        }],
+      }),
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    })
+
+    const html = renderToStaticMarkup(<SkillDetailPage />)
+
+    expect(html).toContain('skillDetail.suiteEntryTitle')
+    expect(html).toContain('Research Workflow')
+    expect(html).toContain('@team-ai/research-workflow@2.0.0')
+    expect(html).toContain('skillDetail.suiteEntryMemberCount')
+  })
+
+  it('does not show a suite recommendation for an ordinary member skill', () => {
+    const html = renderToStaticMarkup(<SkillDetailPage />)
+
+    expect(html).not.toContain('skillDetail.suiteEntryTitle')
   })
 
   it('wraps a long skill name instead of widening the mobile page', () => {

@@ -167,14 +167,42 @@ public class SkillDownloadService {
                                            String currentUserId,
                                            Map<Long, NamespaceRole> userNsRoles) {
         assertPublishedAccessible(skill);
+        if (skill.getResourceType().requiresContentScan() && !version.isDownloadReady()) {
+            throw new DomainBadRequestException("error.resource.content.scanRequired");
+        }
         assertDownloadableVersion(skill, version, currentUserId, userNsRoles);
-        DownloadResult result = buildDownloadResult(skill, version);
+        DownloadResult result = skill.getResourceType() == ResourceType.PROMPT
+                ? buildResourceFileResult(version, "PROMPT.md", "text/markdown; charset=UTF-8")
+                : skill.getResourceType() == ResourceType.PLUGIN ? buildPluginInstallerResult(version) : buildDownloadResult(skill, version);
 
         // Only increment download count for PUBLISHED versions
         if (version.getStatus() == SkillVersionStatus.PUBLISHED) {
             recordPublishedDownload(skill, version);
         }
         return result;
+    }
+
+    private DownloadResult buildPluginInstallerResult(SkillVersion version) {
+        String installer;
+        try {
+            installer = new com.fasterxml.jackson.databind.ObjectMapper().readTree(version.getParsedMetadataJson())
+                    .path("frontmatter").path("installerFile").asText();
+        } catch (java.io.IOException | IllegalArgumentException e) {
+            throw new DomainBadRequestException("error.resource.plugin.invalid");
+        }
+        return buildResourceFileResult(version, installer, "application/octet-stream");
+    }
+
+    private DownloadResult buildResourceFileResult(SkillVersion version, String filename, String contentType) {
+        SkillFile file = skillFileRepository.findByVersionId(version.getId()).stream()
+                .filter(f -> f.getFilePath().equals(filename)).findFirst()
+                .orElseThrow(() -> new DomainBadRequestException("error.resource.file.missing"));
+        if (!objectStorageService.exists(file.getStorageKey())) {
+            throw new DomainBadRequestException("error.resource.file.missing");
+        }
+        return new DownloadResult(() -> objectStorageService.getObject(file.getStorageKey()),
+                filename, file.getFileSize(), contentType,
+                objectStorageService.generatePresignedUrl(file.getStorageKey(), Duration.ofMinutes(10), filename), false);
     }
 
     private void recordPublishedDownload(Skill skill, SkillVersion version) {
@@ -308,6 +336,9 @@ public class SkillDownloadService {
     }
 
     private void assertPublishedAccessible(Skill skill) {
+        if (skill.getResourceType() == com.iflytek.skillhub.domain.skill.ResourceType.WEB) {
+            throw new DomainBadRequestException("error.resource.web.notInstallable");
+        }
         if (skill.getStatus() != SkillStatus.ACTIVE) {
             throw new DomainBadRequestException("error.skill.status.notActive");
         }

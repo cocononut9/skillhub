@@ -116,8 +116,42 @@ public class SkillQueryService {
             SkillLifecycleProjectionService.VersionProjection publishedVersion,
             SkillLifecycleProjectionService.VersionProjection ownerPreviewVersion,
             String ownerPreviewReviewComment,
-            String resolutionMode
-    ) {}
+            String resolutionMode,
+            String resourceType
+    ) {
+        public SkillDetailDTO(
+                Long id,
+                String slug,
+                String displayName,
+                String ownerId,
+                String ownerDisplayName,
+                String summary,
+                String visibility,
+                String status,
+                Long downloadCount,
+                Integer starCount,
+                Integer subscriptionCount,
+                java.math.BigDecimal ratingAvg,
+                Integer ratingCount,
+                boolean hidden,
+                Long namespaceId,
+                java.time.Instant createdAt,
+                java.time.Instant updatedAt,
+                boolean canManageLifecycle,
+                boolean canSubmitPromotion,
+                boolean canInteract,
+                boolean canReport,
+                SkillLifecycleProjectionService.VersionProjection headlineVersion,
+                SkillLifecycleProjectionService.VersionProjection publishedVersion,
+                SkillLifecycleProjectionService.VersionProjection ownerPreviewVersion,
+                String ownerPreviewReviewComment,
+                String resolutionMode) {
+            this(id, slug, displayName, ownerId, ownerDisplayName, summary, visibility, status, downloadCount,
+                    starCount, subscriptionCount, ratingAvg, ratingCount, hidden, namespaceId, createdAt,
+                    updatedAt, canManageLifecycle, canSubmitPromotion, canInteract, canReport, headlineVersion,
+                    publishedVersion, ownerPreviewVersion, ownerPreviewReviewComment, resolutionMode, "SKILL");
+        }
+    }
 
     public record SkillVersionDetailDTO(
             Long id,
@@ -249,7 +283,8 @@ public class SkillQueryService {
                 publishedVersion,
                 ownerPreviewVersion,
                 ownerPreviewReviewComment,
-                projection.resolutionMode().name()
+                projection.resolutionMode().name(),
+                skill.getResourceType().name()
         );
     }
 
@@ -319,6 +354,7 @@ public class SkillQueryService {
                 .collect(Collectors.toMap(SkillVersion::getId, Function.identity()));
 
         List<Skill> installableSkills = accessibleSkills.stream()
+                .filter(skill -> skill.getResourceType() == ResourceType.SKILL)
                 .filter(skill -> SkillInstallability.isInstallableVersion(latestVersions.get(skill.getLatestVersionId())))
                 .sorted(Comparator.comparing(Skill::getSlug)
                         .thenComparing(Skill::getId, Comparator.nullsLast(Comparator.naturalOrder())))
@@ -601,6 +637,10 @@ public class SkillQueryService {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
         assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
+        if (skill.getResourceType() != ResourceType.SKILL) {
+            throw new DomainBadRequestException(skill.getResourceType() == ResourceType.WEB
+                    ? "error.resource.web.notInstallable" : skill.getResourceType() == ResourceType.PROMPT ? "error.resource.prompt.notInstallable" : "error.resource.plugin.notInstallable");
+        }
         SkillVersion resolved = resolveVersionEntity(skill, version, tag, hash);
         assertInstallableVersion(resolved, resolved.getVersion());
         String fingerprint = computeFingerprint(resolved);
@@ -619,6 +659,34 @@ public class SkillQueryService {
                         encodePathSegment(namespaceSlug),
                         encodePathSegment(skill.getSlug()),
                         encodePathSegment(resolved.getVersion()))
+        );
+    }
+
+    /** Resolves the exact version selected by an authenticated authoring flow. */
+    public ResolvedVersionDTO resolveVersionById(
+            Long versionId,
+            String currentUserId,
+            Map<Long, NamespaceRole> userNsRoles,
+            Set<String> platformRoles
+    ) {
+        SkillVersion version = skillVersionRepository.findById(versionId)
+                .orElseThrow(() -> new DomainBadRequestException("error.skill.version.notFound", versionId));
+        Skill skill = skillRepository.findById(version.getSkillId())
+                .orElseThrow(() -> new DomainBadRequestException("error.skill.notFound", version.getSkillId()));
+        Namespace namespace = namespaceRepository.findById(skill.getNamespaceId())
+                .orElseThrow(() -> new DomainBadRequestException(
+                        "error.namespace.id.notFound", skill.getNamespaceId()));
+        assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles, platformRoles);
+        assertInstallableVersion(version, version.getVersion());
+        String fingerprint = computeFingerprint(version);
+        return new ResolvedVersionDTO(
+                skill.getId(), namespace.getSlug(), skill.getSlug(), version.getVersion(), version.getId(),
+                fingerprint, null,
+                String.format(
+                        "/api/v1/skills/%s/%s/versions/%s/download",
+                        encodePathSegment(namespace.getSlug()),
+                        encodePathSegment(skill.getSlug()),
+                        encodePathSegment(version.getVersion()))
         );
     }
 
@@ -733,6 +801,12 @@ public class SkillQueryService {
     }
 
     private SkillFile findFile(SkillVersion skillVersion, String filePath) {
+        if (!"README.md".equals(filePath) && !skillVersion.isDownloadReady()) {
+            Skill skill = skillRepository.findById(skillVersion.getSkillId()).orElse(null);
+            if (skill != null && skill.getResourceType().requiresContentScan()) {
+                throw new DomainBadRequestException("error.resource.content.scanRequired");
+            }
+        }
         return availableFiles(skillVersion.getId()).stream()
                 .filter(f -> f.getFilePath().equals(filePath))
                 .findFirst()
@@ -854,6 +928,15 @@ public class SkillQueryService {
             Skill skill,
             String currentUserId,
             Map<Long, NamespaceRole> userNsRoles) {
+        assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles, Set.of());
+    }
+
+    private void assertPublishedAccessible(
+            Namespace namespace,
+            Skill skill,
+            String currentUserId,
+            Map<Long, NamespaceRole> userNsRoles,
+            Set<String> platformRoles) {
         if (namespace.getStatus() == NamespaceStatus.ARCHIVED && !isNamespaceMember(skill.getNamespaceId(), currentUserId, userNsRoles)) {
             throw new DomainForbiddenException("error.namespace.archived", namespace.getSlug());
         }
@@ -863,7 +946,7 @@ public class SkillQueryService {
         if (skill.isHidden() && !canManageRestrictedSkill(skill, currentUserId, userNsRoles)) {
             throw new DomainForbiddenException("error.skill.access.denied", skill.getSlug());
         }
-        if (!visibilityChecker.canAccess(skill, currentUserId, userNsRoles)) {
+        if (!visibilityChecker.canAccess(skill, currentUserId, userNsRoles, platformRoles)) {
             throw new DomainForbiddenException("error.skill.access.denied", skill.getSlug());
         }
     }

@@ -44,12 +44,13 @@ async function getSkillDocumentation(namespace: string, slug: string, version: s
   return fetchText(`${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/versions/${encodeURIComponent(version)}/file?path=${encodeURIComponent(path)}`)
 }
 
-async function publishSkill(params: { namespace: string; file: File; visibility: string; confirmWarnings?: boolean }): Promise<PublishResult> {
+async function publishSkill(params: { namespace: string; file: File; visibility: string; confirmWarnings?: boolean; labelSlugs?: string[] }): Promise<PublishResult> {
   const cleanNamespace = params.namespace.startsWith('@') ? params.namespace.slice(1) : params.namespace
   const formData = new FormData()
   formData.append('file', params.file)
   formData.append('visibility', params.visibility)
   formData.append('confirmWarnings', String(params.confirmWarnings === true))
+  params.labelSlugs?.forEach((slug) => formData.append('labelSlugs', slug))
 
   return fetchJson<PublishResult>(`${WEB_API_PREFIX}/skills/${cleanNamespace}/publish`, {
     method: 'POST',
@@ -59,11 +60,11 @@ async function publishSkill(params: { namespace: string; file: File; visibility:
   })
 }
 
-export function useSearchSkills(params: SearchParams) {
+export function useSearchSkills(params: SearchParams, enabled = true) {
   return useQuery({
     queryKey: ['skills', 'search', params],
     queryFn: () => searchSkills(params),
-    enabled: params.starredOnly !== true,
+    enabled: enabled && params.starredOnly !== true,
     // Keep prior results while typing/debouncing so the grid is not swapped for
     // skeletons (unmount churn that races header portals under React 19).
     placeholderData: keepPreviousData,

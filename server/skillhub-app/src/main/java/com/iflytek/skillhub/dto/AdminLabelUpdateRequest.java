@@ -10,5 +10,11 @@ public record AdminLabelUpdateRequest(
         @NotNull LabelType type,
         boolean visibleInFilter,
         int sortOrder,
-        @Valid @NotEmpty List<LabelTranslationItemRequest> translations
-) {}
+        @Valid @NotEmpty List<LabelTranslationItemRequest> translations,
+        com.iflytek.skillhub.domain.label.LabelCategory category
+) {
+    public AdminLabelUpdateRequest(LabelType type, boolean visibleInFilter, int sortOrder,
+                                   List<LabelTranslationItemRequest> translations) {
+        this(type, visibleInFilter, sortOrder, translations, null);
+    }
+}

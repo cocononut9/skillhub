@@ -45,6 +45,7 @@ function toCandidateLabel(definition: LabelDefinition, locale: string): LabelIte
   return {
     slug: definition.slug,
     type: definition.type,
+    category: definition.category ?? 'GENERAL',
     displayName: resolveDisplayName(definition.translations, locale, definition.slug),
     sortOrder: definition.sortOrder,
   }
@@ -153,7 +154,7 @@ export function SkillLabelPanel({ namespace, slug, initialLabels, canManage, isS
                     >
                       {label.displayName}
                     </div>
-                    <div className="mt-1 text-xs text-muted-foreground">{label.slug}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{t('labelCategories.' + (label.category ?? 'GENERAL'))}</div>
                   </div>
                   {removable ? (
                     <Button

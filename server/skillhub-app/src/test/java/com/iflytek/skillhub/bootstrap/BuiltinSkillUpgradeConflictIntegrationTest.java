@@ -297,7 +297,8 @@ class BuiltinSkillUpgradeConflictIntegrationTest {
                 ---
                 # %s
                 """).formatted(name, name, version, name).getBytes(StandardCharsets.UTF_8);
-        byte[] readmeBytes = readme.getBytes(StandardCharsets.UTF_8);
+        byte[] readmeBytes = ("# " + name + "\n\n> " + readme + "\n")
+                .getBytes(StandardCharsets.UTF_8);
         return List.of(
                 new PackageEntry("SKILL.md", skillMd, skillMd.length, "text/markdown"),
                 new PackageEntry("README.md", readmeBytes, readmeBytes.length, "text/markdown")

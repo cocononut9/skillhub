@@ -24,6 +24,10 @@ vi.mock('@/features/publish/upload-zone', () => ({
   UploadZone: () => null,
 }))
 
+vi.mock('@/features/publish/publish-label-picker', () => ({
+  PublishLabelPicker: () => null,
+}))
+
 vi.mock('@/shared/ui/button', () => ({
   Button: ({ children }: { children: unknown }) => children,
 }))

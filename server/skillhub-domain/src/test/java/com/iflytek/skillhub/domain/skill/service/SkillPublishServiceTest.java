@@ -122,10 +122,16 @@ class SkillPublishServiceTest {
         String namespaceSlug = "test-ns";
         String publisherId = "user-100";
         String skillMdContent = "---\nname: test-skill\ndescription: Test\nversion: 1.0.0\n---\nBody";
+        String readmeContent = "# 中文测试技能\n\n> 用一句中文说明技能用途。\n";
 
         PackageEntry skillMd = new PackageEntry("SKILL.md", skillMdContent.getBytes(), skillMdContent.length(), "text/markdown");
+        PackageEntry readme = new PackageEntry(
+                "README.md",
+                readmeContent.getBytes(StandardCharsets.UTF_8),
+                readmeContent.getBytes(StandardCharsets.UTF_8).length,
+                "text/markdown");
         PackageEntry file1 = new PackageEntry("file1.txt", "content".getBytes(), 7, "text/plain");
-        List<PackageEntry> entries = List.of(skillMd, file1);
+        List<PackageEntry> entries = List.of(skillMd, readme, file1);
 
         Namespace namespace = new Namespace(namespaceSlug, "Test NS", "user-1");
         setId(namespace, 1L);
@@ -166,6 +172,14 @@ class SkillPublishServiceTest {
         assertEquals("test-skill", result.slug());
         assertEquals("1.0.0", result.version().getVersion());
         assertEquals(SkillVersionStatus.PENDING_REVIEW, result.version().getStatus());
+        assertEquals("中文测试技能", skill.getDisplayName());
+        assertEquals("用一句中文说明技能用途。", skill.getSummary());
+        assertEquals(
+                "中文测试技能",
+                objectMapper.readTree(result.version().getParsedMetadataJson()).path("displayName").asText());
+        assertEquals(
+                "用一句中文说明技能用途。",
+                objectMapper.readTree(result.version().getParsedMetadataJson()).path("summary").asText());
         verify(skillFileRepository).saveAll(anyList());
         verify(objectStorageService, atLeastOnce()).putObject(anyString(), any(), anyLong(), anyString());
         verify(reviewTaskRepository).save(any(ReviewTask.class));
@@ -176,6 +190,37 @@ class SkillPublishServiceTest {
         assertEquals(10L, submittedEvent.versionId());
         assertEquals(publisherId, submittedEvent.submitterId());
         assertEquals(1L, submittedEvent.namespaceId());
+    }
+
+    @Test
+    void testPublishFromEntries_ShouldRejectMalformedReadmePresentation() throws Exception {
+        String namespaceSlug = "test-ns";
+        String publisherId = "user-100";
+        String skillMdContent = "---\nname: test-skill\ndescription: Test\nversion: 1.0.0\n---\nBody";
+        PackageEntry skillMd = new PackageEntry(
+                "SKILL.md", skillMdContent.getBytes(StandardCharsets.UTF_8),
+                skillMdContent.getBytes(StandardCharsets.UTF_8).length, "text/markdown");
+        byte[] malformedReadme = "# 中文名称\n\n缺少引用格式。".getBytes(StandardCharsets.UTF_8);
+        PackageEntry readme = new PackageEntry(
+                "README.md", malformedReadme, malformedReadme.length, "text/markdown");
+        List<PackageEntry> entries = List.of(skillMd, readme);
+
+        Namespace namespace = new Namespace(namespaceSlug, "Test NS", "user-1");
+        setId(namespace, 1L);
+        NamespaceMember member = mock(NamespaceMember.class);
+        SkillMetadata metadata = new SkillMetadata("test-skill", "Test", "1.0.0", "Body", Map.of());
+        when(namespaceRepository.findBySlug(namespaceSlug)).thenReturn(Optional.of(namespace));
+        when(namespaceMemberRepository.findByNamespaceIdAndUserId(1L, publisherId)).thenReturn(Optional.of(member));
+        when(skillPackageValidator.validate(entries)).thenReturn(ValidationResult.pass());
+        when(skillMetadataParser.parse(skillMdContent)).thenReturn(metadata);
+
+        DomainBadRequestException exception = assertThrows(
+                DomainBadRequestException.class,
+                () -> service.publishFromEntries(
+                        namespaceSlug, entries, publisherId, SkillVisibility.PUBLIC, Set.of()));
+
+        assertEquals("error.skill.publish.readmePresentation.invalid", exception.messageCode());
+        verify(skillVersionRepository, never()).save(any(SkillVersion.class));
     }
 
     @Test
@@ -1039,7 +1084,7 @@ class SkillPublishServiceTest {
                 ---
                 Hello world
                 """;
-        byte[] readmeBytes = "# Demo".getBytes(StandardCharsets.UTF_8);
+        byte[] readmeBytes = "# 演示技能\n\n> 用于验证重新发布流程。\n".getBytes(StandardCharsets.UTF_8);
 
         SkillFile skillMdFile = new SkillFile(sourceVersion.getId(), "SKILL.md", (long) sourceSkillMd.getBytes(StandardCharsets.UTF_8).length, "text/markdown", "hash1", "skills/11/21/SKILL.md");
         SkillFile readmeFile = new SkillFile(sourceVersion.getId(), "README.md", (long) readmeBytes.length, "text/markdown", "hash2", "skills/11/21/README.md");
@@ -1753,7 +1798,9 @@ class SkillPublishServiceTest {
                 skillMdContent.getBytes(StandardCharsets.UTF_8),
                 skillMdContent.getBytes(StandardCharsets.UTF_8).length,
                 "text/markdown");
-        PackageEntry readme = new PackageEntry("README.md", "content".getBytes(StandardCharsets.UTF_8), 7, "text/markdown");
+        byte[] readmeContent = "# 测试技能\n\n> 用于测试发布流程。\n".getBytes(StandardCharsets.UTF_8);
+        PackageEntry readme = new PackageEntry(
+                "README.md", readmeContent, readmeContent.length, "text/markdown");
         return List.of(skillMd, readme);
     }
 

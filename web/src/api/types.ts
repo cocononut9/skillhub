@@ -196,6 +196,8 @@ export interface BatchMemberResponse {
 
 // Skill types
 export interface SkillSummary {
+  labels?: LabelItem[]
+  resourceType?: components['schemas']['SkillSummaryResponse']['resourceType']
   id: number
   slug: string
   displayName: string
@@ -218,8 +220,11 @@ export interface SkillSummary {
   complianceSnapshot?: ComplianceSnapshot
 }
 
+export type LabelCategory = NonNullable<components['schemas']['SkillLabelDto']['category']>
+
 export type LabelItem = Omit<components['schemas']['SkillLabelDto'], 'slug' | 'type' | 'displayName'> & {
   slug: string
+  category?: LabelCategory
   type: 'RECOMMENDED' | 'PRIVILEGED' | string
   displayName: string
 }
@@ -242,6 +247,7 @@ export type LabelDefinition = Omit<
 
 export interface AdminLabelInput {
   slug: string
+  category?: LabelCategory
   type: 'RECOMMENDED' | 'PRIVILEGED'
   visibleInFilter: boolean
   sortOrder: number
@@ -275,7 +281,17 @@ export interface ComplianceSnapshot {
   digest?: string
 }
 
+export interface SkillSuiteReference {
+  suiteId: number
+  namespace: string
+  slug: string
+  displayName: string
+  version: string
+  memberCount: number
+}
+
 export interface SkillDetail {
+  resourceType?: components['schemas']['SkillDetailResponse']['resourceType']
   id: number
   slug: string
   displayName: string
@@ -300,6 +316,7 @@ export interface SkillDetail {
   ownerPreviewVersion?: SkillLifecycleVersion
   ownerPreviewReviewComment?: string
   resolutionMode?: string
+  entryForSuites?: SkillSuiteReference[]
 }
 
 export interface SubmitPromotionRequest {
@@ -390,10 +407,15 @@ export interface SkillTag {
 }
 
 // Search and pagination
+export type ResourceType = 'SKILL' | 'WEB' | 'PLUGIN' | 'PROMPT'
+
 export interface SearchParams {
+  resourceType?: ResourceType
   q?: string
   namespace?: string
   label?: string
+  workflow?: string
+  role?: string
   sort?: string
   page?: number
   size?: number
@@ -406,6 +428,51 @@ export interface PagedResponse<T> {
   page: number
   size: number
 }
+
+export type ResourceSearchType = 'SKILL' | 'SUITE'
+
+type RequiredGenerated<T, Optional extends keyof T = never> =
+  Required<Omit<T, Optional>> & Pick<T, Optional>
+
+type GeneratedResourceSummary = components['schemas']['ResourceSummaryResponse']
+export type ResourceSummary = Omit<RequiredGenerated<GeneratedResourceSummary, 'summary'>, 'resourceType'> & {
+  resourceType: ResourceSearchType
+}
+
+export interface ResourceSearchParams {
+  q?: string
+  namespace?: string
+  resourceType?: ResourceSearchType
+  sort?: string
+  page?: number
+  size?: number
+}
+
+type GeneratedSuiteMember = components['schemas']['SkillSuiteMemberResponse']
+export type SkillSuiteMember = RequiredGenerated<
+  GeneratedSuiteMember,
+  'skillId' | 'skillVersionId' | 'displayName' | 'summary' | 'blockingReason'
+>
+
+type GeneratedSuite = components['schemas']['SkillSuiteResponse']
+export type SkillSuite = Omit<RequiredGenerated<GeneratedSuite, 'summary' | 'overview'>, 'members'> & {
+  members: SkillSuiteMember[]
+}
+
+type GeneratedSuiteVersion = components['schemas']['SkillSuiteVersionSummaryResponse']
+export type SkillSuiteVersion = RequiredGenerated<GeneratedSuiteVersion, 'publishedAt' | 'yankedAt'>
+
+export type SkillSuiteMemberCandidate = RequiredGenerated<
+  components['schemas']['SkillSuiteMemberCandidateResponse']
+>
+
+export type SkillSuiteMemberInput = components['schemas']['SkillSuiteMemberRequest']
+export type SkillSuiteDraftInput = components['schemas']['SkillSuiteCreateRequest']
+
+export type MySkillSuiteSummary = RequiredGenerated<
+  components['schemas']['MySkillSuiteSummaryResponse'],
+  'summary'
+>
 
 // Publish
 export interface PublishResult {
@@ -429,7 +496,7 @@ export interface ReviewTask {
   id: number
   skillVersionId: number | null
   namespace: string
-  skillSlug: string
+  skillSlug?: string | null
   version: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   submittedBy: string
@@ -439,6 +506,10 @@ export interface ReviewTask {
   reviewComment?: string
   submittedAt: string
   reviewedAt?: string
+  subjectType?: 'SKILL_VERSION' | 'SUITE_VERSION'
+  subjectId?: number | null
+  subjectVersionId?: number | null
+  subjectSlug?: string | null
 }
 
 export interface ReviewProgress {

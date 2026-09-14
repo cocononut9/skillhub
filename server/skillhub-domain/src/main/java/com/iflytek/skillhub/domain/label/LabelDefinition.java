@@ -19,6 +19,10 @@ public class LabelDefinition {
     @Column(name = "type", nullable = false, length = 16)
     private LabelType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", nullable = false, length = 16)
+    private LabelCategory category = LabelCategory.GENERAL;
+
     @Column(name = "visible_in_filter", nullable = false)
     private boolean visibleInFilter = true;
 
@@ -67,6 +71,14 @@ public class LabelDefinition {
 
     public LabelType getType() {
         return type;
+    }
+
+    public LabelCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(LabelCategory category) {
+        this.category = java.util.Objects.requireNonNull(category);
     }
 
     public boolean isVisibleInFilter() {

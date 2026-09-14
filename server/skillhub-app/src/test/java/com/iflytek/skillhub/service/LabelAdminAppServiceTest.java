@@ -49,7 +49,7 @@ class LabelAdminAppServiceTest {
     void create_returnsDefinitionResponseAndRecordsAudit() {
         LabelDefinition created = label(10L, "official", LabelType.RECOMMENDED, true, 1);
         when(rbacService.getUserRoleCodes("admin")).thenReturn(Set.of("SUPER_ADMIN"));
-        when(labelDefinitionService.create(eq("official"), eq(LabelType.RECOMMENDED), eq(true), eq(1), any(), eq("admin"), eq(Set.of("SUPER_ADMIN"))))
+        when(labelDefinitionService.create(eq("official"), eq(LabelType.RECOMMENDED), org.mockito.ArgumentMatchers.isNull(), eq(true), eq(1), any(), eq("admin"), eq(Set.of("SUPER_ADMIN"))))
                 .thenReturn(created);
         when(labelDefinitionService.listTranslations(10L))
                 .thenReturn(List.of(new LabelTranslation(10L, "en", "Official")));
@@ -84,7 +84,7 @@ class LabelAdminAppServiceTest {
                 new SkillLabel(200L, 10L, "owner-2"),
                 new SkillLabel(100L, 10L, "owner-1")
         ));
-        when(labelDefinitionService.update(eq("official"), eq(LabelType.PRIVILEGED), eq(false), eq(3), any(), eq(Set.of("SUPER_ADMIN"))))
+        when(labelDefinitionService.update(eq("official"), eq(LabelType.PRIVILEGED), org.mockito.ArgumentMatchers.isNull(), eq(false), eq(3), any(), eq(Set.of("SUPER_ADMIN"))))
                 .thenReturn(updated);
         when(labelDefinitionService.listTranslations(10L))
                 .thenReturn(List.of(new LabelTranslation(10L, "en", "Official")));

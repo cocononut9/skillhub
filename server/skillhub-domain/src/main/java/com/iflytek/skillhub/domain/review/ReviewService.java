@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.domain.review;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iflytek.skillhub.domain.audit.AuditDetail;
 import com.iflytek.skillhub.domain.namespace.Namespace;
@@ -19,7 +20,6 @@ import com.iflytek.skillhub.domain.skill.SkillRepository;
 import com.iflytek.skillhub.domain.skill.SkillVersion;
 import com.iflytek.skillhub.domain.skill.SkillVersionRepository;
 import com.iflytek.skillhub.domain.skill.SkillVersionStatus;
-import com.iflytek.skillhub.domain.skill.metadata.SkillMetadata;
 import com.iflytek.skillhub.domain.skill.service.SkillGovernanceService;
 import jakarta.persistence.EntityManager;
 import org.springframework.context.ApplicationEventPublisher;
@@ -197,6 +197,12 @@ public class ReviewService {
             throw new DomainBadRequestException("review.approve.scan_in_progress", reviewTaskId);
         }
 
+        Skill skill = skillRepository.findById(skillVersion.getSkillId())
+                .orElseThrow(() -> new DomainNotFoundException("skill.not_found", skillVersion.getSkillId()));
+        if (skill.getResourceType().requiresContentScan() && !skillVersion.isDownloadReady()) {
+            throw new DomainBadRequestException("error.resource.content.scanRequired");
+        }
+
         int updated = reviewTaskRepository.updateStatusWithVersion(
                 reviewTaskId, ReviewTaskStatus.APPROVED, reviewerId, comment, task.getVersion());
         if (updated == 0) {
@@ -204,9 +210,6 @@ public class ReviewService {
         }
         syncReviewTaskState(task, ReviewTaskStatus.APPROVED, reviewerId, comment);
         entityManager.detach(task);
-
-        Skill skill = skillRepository.findById(skillVersion.getSkillId())
-                .orElseThrow(() -> new DomainNotFoundException("skill.not_found", skillVersion.getSkillId()));
 
         // Check no other owner has a published skill with the same slug
         List<Skill> sameSlugSkills = skillRepository.findByNamespaceIdAndSlug(skill.getNamespaceId(), skill.getSlug());
@@ -352,12 +355,20 @@ public class ReviewService {
         }
 
         try {
-            SkillMetadata metadata = objectMapper.readValue(metadataJson, SkillMetadata.class);
-            skill.setDisplayName(metadata.name());
-            skill.setSummary(metadata.description());
+            JsonNode metadata = objectMapper.readTree(metadataJson);
+            skill.setDisplayName(readPresentationField(metadata, "displayName", "name"));
+            skill.setSummary(readPresentationField(metadata, "summary", "description"));
         } catch (Exception e) {
             throw new IllegalStateException("Failed to deserialize skill metadata", e);
         }
+    }
+
+    private String readPresentationField(JsonNode metadata, String fieldName, String fallbackFieldName) {
+        String value = metadata.path(fieldName).asText(null);
+        if (value == null || value.isBlank()) {
+            value = metadata.path(fallbackFieldName).asText(null);
+        }
+        return value;
     }
 
     private void assertNamespaceActive(Namespace namespace) {

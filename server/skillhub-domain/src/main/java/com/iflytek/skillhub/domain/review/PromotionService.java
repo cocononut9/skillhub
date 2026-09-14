@@ -213,6 +213,7 @@ public class PromotionService {
         // Create new skill in global namespace
         Skill newSkill = new Skill(approvedRequest.getTargetNamespaceId(), sourceSkill.getSlug(),
                 sourceSkill.getOwnerId(), SkillVisibility.PUBLIC);
+        newSkill.setResourceType(sourceSkill.getResourceType());
         newSkill.setDisplayName(sourceSkill.getDisplayName());
         newSkill.setSummary(sourceSkill.getSummary());
         newSkill.setSourceSkillId(sourceSkill.getId());

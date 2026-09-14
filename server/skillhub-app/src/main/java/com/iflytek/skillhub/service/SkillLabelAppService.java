@@ -89,15 +89,25 @@ public class SkillLabelAppService {
                                      Map<Long, NamespaceRole> userNsRoles,
         AuditRequestContext auditContext) {
         Skill skill = resolveSkill(namespaceSlug, skillSlug, userId);
+        return attachLabelBySkillId(skill.getId(), labelSlug, userId, userNsRoles, auditContext);
+    }
+
+    /** Uses the upload result's stable ID, including when different owners have the same draft slug. */
+    @Transactional
+    public SkillLabelDto attachLabelBySkillId(Long skillId,
+                                            String labelSlug,
+                                            String userId,
+                                            Map<Long, NamespaceRole> userNsRoles,
+                                            AuditRequestContext auditContext) {
         SkillLabel attached = skillLabelService.attachLabel(
-                skill.getId(),
+                skillId,
                 labelSlug,
                 userId,
                 normalizeRoles(userNsRoles),
                 platformRoles(userId)
         );
-        afterCommit(() -> labelSearchSyncService.rebuildSkill(skill.getId()));
-        recordAudit("SKILL_LABEL_ATTACH", userId, skill.getId(), auditContext, AuditDetail.of("labelSlug", labelSlug));
+        afterCommit(() -> labelSearchSyncService.rebuildSkill(skillId));
+        recordAudit("SKILL_LABEL_ATTACH", userId, skillId, auditContext, AuditDetail.of("labelSlug", labelSlug));
         return toDtos(List.of(attached)).getFirst();
     }
 
@@ -141,7 +151,8 @@ public class SkillLabelAppService {
                             definition.getType().name(),
                             labelLocalizationService.resolveDisplayName(
                                     definition.getSlug(),
-                                    translationsByLabelId.getOrDefault(definition.getId(), List.of()))
+                                    translationsByLabelId.getOrDefault(definition.getId(), List.of())),
+                            definition.getCategory()
                     );
                 })
                 .sorted(java.util.Comparator.comparing(SkillLabelDto::type).thenComparing(SkillLabelDto::slug))

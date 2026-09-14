@@ -1,0 +1,11 @@
+<!-- 图形路径与尺寸取自 public/brand/1000shores-logo.svg，供单色装饰使用。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 39.8 27.4">
+  <g fill-rule="evenodd" clip-rule="evenodd">
+    <path d="M24.6,6.4L28.3,0l11.5,19.9h-4.1L28.3,7.2L26.7,10L24.6,6.4L24.6,6.4z"/>
+    <path d="M16.2,6.4L19.9,0l11.5,19.9h-4.1L19.9,7.2L18.3,10L16.2,6.4z"/>
+    <path d="M15.2,15.3l-2.6,4.6H0L11.5,0L23,19.9h-4.1L11.5,7.2l-5.3,9.2h4.2l2.6-4.6L15.2,15.3 L15.2,15.3z"/>
+  </g>
+  <rect y="21.2" width="39.8" height="1.3"/>
+  <rect x="4" y="23.8" width="31.9" height="1.1"/>
+  <rect x="8" y="26.6" width="23.9" height="0.8"/>
+</svg>

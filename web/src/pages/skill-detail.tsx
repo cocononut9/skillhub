@@ -2,13 +2,15 @@ import { startTransition, useCallback, useEffect, useRef, useState, type MouseEv
 import { useTranslation } from 'react-i18next'
 import { Link, useParams, useNavigate, useRouterState, useSearch } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ArrowUpCircle, ChevronDown, ChevronUp, Clock, Folder, Globe, Lock, RefreshCw, ShieldCheck, Terminal, User, Users } from 'lucide-react'
+import { ArrowLeft, ArrowUpCircle, Boxes, ChevronDown, ChevronUp, Clock, Folder, Globe, Lock, RefreshCw, ShieldCheck, Terminal, User, Users } from 'lucide-react'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
 import { resolvePackageRelativeLink } from '@/features/skill/package-relative-link'
 import { FileTree } from '@/features/skill/file-tree'
 import { FilePreviewDialog } from '@/features/skill/file-preview-dialog'
 import type { FileTreeNode } from '@/features/skill/file-tree-builder'
 import type { SkillFile } from '@/api/types'
+import { getWebsiteUrl } from '@/features/skill/web-resource'
+import { PromptResourceContent } from '@/features/skill/prompt-resource-content'
 import { InstallCommand } from '@/features/skill/install-command'
 import { ShareButton } from '@/features/skill/share-button'
 import { InstallForAgentButton } from '@/features/skill/install-for-agent-button'
@@ -168,6 +170,12 @@ export function SkillDetailPage() {
   const publishedVersion = skill ? getPublishedVersion(skill) : null
   const ownerPreviewVersion = skill ? getOwnerPreviewVersion(skill) : null
   const selectedVersion = headlineVersion?.version ?? versions?.[0]?.version
+  const isWebResource = skill?.resourceType === 'WEB'
+  const isPluginResource = skill?.resourceType === 'PLUGIN'
+  const isPromptResource = skill?.resourceType === 'PROMPT'
+  const isSkillResource = !isWebResource && !isPluginResource && !isPromptResource
+  const { data: webVersionDetail } = useSkillVersionDetail(qns, qslug, selectedVersion, skillReady && isWebResource)
+  const websiteUrl = getWebsiteUrl(webVersionDetail?.parsedMetadataJson)
   const selectedVersionEntry = versions?.find((version) => version.version === selectedVersion) ?? versions?.[0]
   const { data: files } = useSkillFiles(qns, qslug, selectedVersion, skillReady)
   const documentationPath = resolveDocumentationFilePath(files)
@@ -908,6 +916,13 @@ export function SkillDetailPage() {
           </TabsList>
 
           <TabsContent value="readme" className="mt-6">
+            {isPromptResource && <PromptResourceContent
+              key={selectedVersion}
+              namespace={qns}
+              slug={qslug}
+              version={selectedVersion}
+              enabled={skillReady && isVersionDownloadable && skill.status !== 'ARCHIVED'}
+            />}
             {readme ? (
               <Card className="p-8 space-y-4">
                 {documentationPath ? (
@@ -1185,7 +1200,42 @@ export function SkillDetailPage() {
           </div>
         </Card>
 
-        {publishedVersion && canInteract && (
+        {(skill.entryForSuites?.length ?? 0) > 0 && (
+          <Card className="border-primary/20 bg-primary/[0.03] p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Boxes className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold font-heading text-foreground">
+                {t('skillDetail.suiteEntryTitle')}
+              </span>
+            </div>
+            <p className="text-sm leading-6 text-muted-foreground">
+              {t('skillDetail.suiteEntryDescription')}
+            </p>
+            <div className="space-y-2">
+              {skill.entryForSuites!.map((suite) => (
+                <Link
+                  key={suite.suiteId}
+                  to="/suite/$namespace/$slug"
+                  params={{ namespace: suite.namespace, slug: suite.slug }}
+                  search={{ version: suite.version }}
+                  className="block rounded-xl border border-border/70 bg-background p-3 transition-colors hover:border-primary/40 hover:bg-primary/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2"
+                >
+                  <span className="block break-words text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+                    {suite.displayName}
+                  </span>
+                  <span className="mt-1 block break-all font-mono text-xs text-muted-foreground">
+                    @{suite.namespace}/{suite.slug}@{suite.version}
+                  </span>
+                  <span className="mt-2 block text-xs font-medium text-primary">
+                    {t('skillDetail.suiteEntryMemberCount', { count: suite.memberCount })}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {isSkillResource && publishedVersion && canInteract && (
           <Card className="p-5 space-y-4">
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-muted-foreground" />
@@ -1244,7 +1294,19 @@ export function SkillDetailPage() {
           </Card>
         )}
 
-        <Button
+        {isWebResource && (
+          <Card className="p-5 space-y-3">
+            <div className="flex items-center gap-2 font-semibold"><Globe className="h-4 w-4" />{t('webResource.type')}</div>
+            {websiteUrl && skill.status !== 'ARCHIVED' && selectedVersionEntry?.status === 'PUBLISHED' ? (
+              <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-primary-foreground">
+                {t('webResource.open')}
+              </a>
+            ) : <p className="text-sm text-muted-foreground">{t('webResource.unavailable')}</p>}
+          </Card>
+        )}
+
+        {isPluginResource && <p className="text-sm text-muted-foreground">{t('pluginResource.scanScope')}</p>}
+        {!isWebResource && <Button
           className="w-full"
           variant="outline"
           size="lg"
@@ -1254,8 +1316,8 @@ export function SkillDetailPage() {
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
           </svg>
-          {t('skillDetail.download')}
-        </Button>
+          {t(isPromptResource ? 'promptResource.download' : isPluginResource ? 'pluginResource.download' : 'skillDetail.download')}
+        </Button>}
 
         <ShareButton
           namespace={namespace}
@@ -1263,12 +1325,12 @@ export function SkillDetailPage() {
           description={skill.summary}
         />
 
-        <InstallForAgentButton
+        {isSkillResource && <InstallForAgentButton
           namespace={namespace}
           slug={slug}
           version={selectedVersionEntry?.version ?? publishedVersion?.version ?? ''}
           disabled={!selectedVersionEntry || skill.status === 'ARCHIVED' || !isVersionDownloadable}
-        />
+        />}
 
         {canManageSecurityScan && securityAuditVersion && (
           <SecurityAuditSummary

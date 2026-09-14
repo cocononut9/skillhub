@@ -18,7 +18,12 @@ import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
 import com.iflytek.skillhub.domain.skill.*;
 import com.iflytek.skillhub.domain.skill.metadata.ComplianceMetadataService;
 import com.iflytek.skillhub.domain.skill.metadata.ComplianceSnapshot;
+import com.iflytek.skillhub.domain.skill.metadata.ReadmePresentationParser;
+import com.iflytek.skillhub.domain.skill.metadata.ReadmePresentationParser.Presentation;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadata;
+import com.iflytek.skillhub.domain.skill.metadata.WebResourceMetadataParser;
+import com.iflytek.skillhub.domain.skill.metadata.PluginResourceMetadataParser;
+import com.iflytek.skillhub.domain.skill.metadata.PromptResourceMetadataParser;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadataParser;
 import com.iflytek.skillhub.domain.skill.validation.PackageEntry;
 import com.iflytek.skillhub.domain.skill.validation.PrePublishValidator;
@@ -39,6 +44,7 @@ import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Clock;
 import java.time.Instant;
@@ -88,6 +94,8 @@ public class SkillPublishService {
     private final SkillPackageValidator skillPackageValidator;
     private final SkillMetadataParser skillMetadataParser;
     private final ComplianceMetadataService complianceMetadataService = new ComplianceMetadataService();
+    private final WebResourceMetadataParser webMetadataParser = new WebResourceMetadataParser();
+    private final ReadmePresentationParser readmePresentationParser = new ReadmePresentationParser();
     private final PrePublishValidator prePublishValidator;
     private final ObjectMapper objectMapper;
     private final ReviewTaskRepository reviewTaskRepository;
@@ -193,21 +201,24 @@ public class SkillPublishService {
             return new DryRunResult(false, errors, warnings, null, null);
         }
 
-        // 4. Parse SKILL.md
-        PackageEntry skillMd = entries.stream()
-                .filter(e -> e.path().equals("SKILL.md"))
-                .findFirst()
-                .orElse(null);
-        if (skillMd == null) {
-            errors.add("Missing required file: SKILL.md at root");
+        SkillMetadata metadata;
+        ResourceType resourceType;
+        try {
+            metadata = parsePackageMetadata(entries);
+            resourceType = resolveResourceType(entries);
+        } catch (Exception e) {
+            errors.add("Invalid package metadata: " + e.getMessage());
             return new DryRunResult(false, errors, warnings, null, null);
         }
 
-        SkillMetadata metadata;
+        if (visibility == SkillVisibility.PRIVATE
+                && resourceType.requiresContentScan() && !securityScanService.isEnabled()) {
+            errors.add("error.security.scanner.required");
+        }
         try {
-            metadata = skillMetadataParser.parse(new String(skillMd.content(), java.nio.charset.StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            errors.add("Invalid SKILL.md: " + e.getMessage());
+            resolvePresentation(entries, metadata);
+        } catch (DomainBadRequestException e) {
+            errors.add("Invalid README.md presentation metadata: " + e.getMessage());
             return new DryRunResult(false, errors, warnings, null, null);
         }
 
@@ -236,6 +247,9 @@ public class SkillPublishService {
             List<Skill> existingSkills = skillRepository.findByNamespaceIdAndSlug(namespace.getId(), resolvedSlug);
             for (Skill existing : existingSkills) {
                 if (existing.getOwnerId().equals(publisherId)) {
+                    if (existing.getResourceType() != resourceType) {
+                        errors.add("error.resource.type.immutable");
+                    }
                     if (existing.getStatus() == SkillStatus.ARCHIVED) {
                         errors.add("Cannot publish to archived skill: " + resolvedSlug);
                     }
@@ -363,14 +377,9 @@ public class SkillPublishService {
                     String.join(", ", packageValidation.errors()));
         }
 
-        // 4. Parse SKILL.md
-        PackageEntry skillMd = entries.stream()
-                .filter(e -> e.path().equals("SKILL.md"))
-                .findFirst()
-                .orElseThrow(() -> new DomainBadRequestException("error.skill.publish.skillMd.notFound"));
-
-        String skillMdContent = new String(skillMd.content());
-        SkillMetadata metadata = skillMetadataParser.parse(skillMdContent);
+        SkillMetadata metadata = parsePackageMetadata(entries);
+        ResourceType resourceType = resolveResourceType(entries);
+        Presentation presentation = resolvePresentation(entries, metadata);
         if (metadata.version() == null || metadata.version().isBlank()) {
             String autoVersion = AUTO_VERSION_FORMATTER.format(currentTime());
             metadata = new SkillMetadata(metadata.name(), metadata.description(), autoVersion, metadata.body(), metadata.frontmatter());
@@ -393,7 +402,7 @@ public class SkillPublishService {
                     "error.skill.publish.precheck.confirmRequired",
                     formatValidationMessages(publishWarnings));
         }
-        if (requiresSecurityScanner(visibility) && !securityScanService.isEnabled()) {
+        if ((requiresSecurityScanner(visibility) || resourceType.requiresContentScan()) && !securityScanService.isEnabled()) {
             throw new DomainBadRequestException("error.security.scanner.required");
         }
 
@@ -423,6 +432,7 @@ public class SkillPublishService {
                 .orElseGet(() -> {
                     Skill newSkill = new Skill(namespace.getId(), skillSlug, publisherId, visibility);
                     newSkill.setCreatedBy(publisherId);
+                    newSkill.setResourceType(resourceType);
                     try {
                         Skill savedSkill = skillRepository.save(newSkill);
                         // save() may defer the unique-constraint check until transaction commit.
@@ -439,6 +449,10 @@ public class SkillPublishService {
 
         if (skill.getStatus() == SkillStatus.ARCHIVED) {
             throw new DomainBadRequestException("error.skill.publish.archived", skillSlug);
+        }
+
+        if (skill.getResourceType() != resourceType) {
+            throw new DomainBadRequestException("error.resource.type.immutable");
         }
 
         // 6c. Auto-withdraw pending review versions
@@ -481,7 +495,8 @@ public class SkillPublishService {
 
         // Store metadata as JSON
         try {
-            String metadataJson = objectMapper.writeValueAsString(buildParsedMetadata(metadata, complianceSnapshot));
+            String metadataJson = objectMapper.writeValueAsString(
+                    buildParsedMetadata(metadata, complianceSnapshot, presentation));
             version.setParsedMetadataJson(metadataJson);
             version.setManifestJson(objectMapper.writeValueAsString(buildManifest(entries)));
         } catch (Exception e) {
@@ -556,7 +571,7 @@ public class SkillPublishService {
         version.setFileCount(skillFiles.size());
         version.setTotalSize(totalSize);
         version.setBundleReady(true);
-        version.setDownloadReady(!skillFiles.isEmpty());
+        version.setDownloadReady(!resourceType.requiresContentScan() && !skillFiles.isEmpty());
         skillVersionRepository.save(version);
 
         // Create review task for PUBLIC/NAMESPACE_ONLY (not PRIVATE)
@@ -579,8 +594,8 @@ public class SkillPublishService {
         }
 
         // 12. Update skill metadata and move the published pointer for auto-publish flows
-        skill.setDisplayName(metadata.name());
-        skill.setSummary(metadata.description());
+        skill.setDisplayName(presentation.displayName());
+        skill.setSummary(presentation.summary());
         if (autoPublish || visibility == SkillVisibility.PRIVATE) {
             // Update latestVersionId for autoPublish or PRIVATE skill (UPLOADED status)
             skill.setLatestVersionId(version.getId());
@@ -713,6 +728,12 @@ public class SkillPublishService {
         List<PackageEntry> entries = new ArrayList<>(files.size());
         for (SkillFile file : files) {
             byte[] content = readAllBytes(objectStorageService.getObject(file.getStorageKey()));
+            if ("README.md".equals(file.getFilePath())
+                    && skillRepository.findById(skillId).orElseThrow().getResourceType() != ResourceType.SKILL) {
+                String readme = new String(content, StandardCharsets.UTF_8);
+                readme = webMetadataParser.rewriteVersion(readme, targetVersion);
+                content = readme.getBytes(StandardCharsets.UTF_8);
+            }
             if ("SKILL.md".equals(file.getFilePath())) {
                 content = rewriteSkillMdVersion(content, targetVersion);
             }
@@ -755,15 +776,44 @@ public class SkillPublishService {
                 .toList();
     }
 
-    private Map<String, Object> buildParsedMetadata(SkillMetadata metadata, ComplianceSnapshot complianceSnapshot) {
+    private Map<String, Object> buildParsedMetadata(
+            SkillMetadata metadata,
+            ComplianceSnapshot complianceSnapshot,
+            Presentation presentation) {
         Map<String, Object> parsedMetadata = new LinkedHashMap<>();
         parsedMetadata.put("name", metadata.name());
         parsedMetadata.put("description", metadata.description());
+        parsedMetadata.put("displayName", presentation.displayName());
+        parsedMetadata.put("summary", presentation.summary());
         parsedMetadata.put("version", metadata.version());
         parsedMetadata.put("body", metadata.body());
         parsedMetadata.put("frontmatter", metadata.frontmatter());
         parsedMetadata.put(ComplianceMetadataService.SNAPSHOT_FIELD_NAME, complianceSnapshot);
         return parsedMetadata;
+    }
+
+    private ResourceType resolveResourceType(List<PackageEntry> entries) {
+        return new PromptResourceMetadataParser().parse(entries).isPresent() ? ResourceType.PROMPT
+                : new PluginResourceMetadataParser().parse(entries).isPresent() ? ResourceType.PLUGIN
+                : webMetadataParser.parse(entries).isPresent() ? ResourceType.WEB : ResourceType.SKILL;
+    }
+
+    private SkillMetadata parsePackageMetadata(List<PackageEntry> entries) {
+        return new PromptResourceMetadataParser().parse(entries).or(() -> new PluginResourceMetadataParser().parse(entries))
+                .or(() -> webMetadataParser.parse(entries)).orElseGet(() -> {
+            PackageEntry skillMd = entries.stream().filter(e -> "SKILL.md".equals(e.path())).findFirst()
+                    .orElseThrow(() -> new DomainBadRequestException("error.skill.publish.skillMd.notFound"));
+            return skillMetadataParser.parse(new String(skillMd.content(), StandardCharsets.UTF_8));
+        });
+    }
+
+    private Presentation resolvePresentation(List<PackageEntry> entries, SkillMetadata metadata) {
+        return entries.stream()
+                .filter(entry -> "README.md".equals(entry.path()))
+                .findFirst()
+                .map(entry -> readmePresentationParser.parse(
+                        new String(entry.content(), StandardCharsets.UTF_8)))
+                .orElseGet(() -> new Presentation(metadata.name(), metadata.description()));
     }
 
     private byte[] buildBundle(List<PackageEntry> entries) {

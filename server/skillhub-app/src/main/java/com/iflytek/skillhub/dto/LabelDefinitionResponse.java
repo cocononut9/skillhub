@@ -9,5 +9,12 @@ public record LabelDefinitionResponse(
         boolean visibleInFilter,
         int sortOrder,
         List<LabelTranslationResponse> translations,
-        Instant createdAt
-) {}
+        Instant createdAt,
+        com.iflytek.skillhub.domain.label.LabelCategory category
+) {
+    public LabelDefinitionResponse(String slug, String type, boolean visibleInFilter, int sortOrder,
+                                   List<LabelTranslationResponse> translations, Instant createdAt) {
+        this(slug, type, visibleInFilter, sortOrder, translations, createdAt,
+                com.iflytek.skillhub.domain.label.LabelCategory.GENERAL);
+    }
+}

@@ -101,7 +101,7 @@ class ClawHubCompatControllerTest {
 
     @Test
     void search_returns_mapped_results() throws Exception {
-        when(skillSearchAppService.search("test", null, "relevance", 0, 20, null, null))
+        when(skillSearchAppService.searchInstallableLatest("test", null, "relevance", 0, 20, null, null))
                 .thenReturn(new SkillSearchAppService.SearchResponse(
                         List.of(new SkillSummaryResponse(
                                 1L,
@@ -149,7 +149,7 @@ class ClawHubCompatControllerTest {
         when(userRoleBindingRepository.findByUserId("user-7")).thenReturn(List.of());
         when(namespaceMemberRepository.findByUserId("user-7"))
                 .thenReturn(List.of(new NamespaceMember(9L, "user-7", NamespaceRole.MEMBER)));
-        when(skillSearchAppService.search("token-search", null, "relevance", 0, 20, "user-7", nsRoles))
+        when(skillSearchAppService.searchInstallableLatest("token-search", null, "relevance", 0, 20, "user-7", nsRoles))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(), 0, 0, 20));
 
         mockMvc.perform(get("/api/v1/search")
@@ -158,13 +158,13 @@ class ClawHubCompatControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.results").isArray());
 
-        verify(skillSearchAppService).search("token-search", null, "relevance", 0, 20, "user-7", nsRoles);
+        verify(skillSearchAppService).searchInstallableLatest("token-search", null, "relevance", 0, 20, "user-7", nsRoles);
         verify(apiTokenService).touchLastUsed(same(token));
     }
 
     @Test
     void listSkills_shouldOmitLabelsByDefault() throws Exception {
-        when(skillSearchAppService.search(eq(""), isNull(), eq("newest"), eq(0), eq(25), isNull(), isNull()))
+        when(skillSearchAppService.searchInstallableLatest(eq(""), isNull(), eq("newest"), eq(0), eq(25), isNull(), isNull()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(summary(7L)), 1, 0, 25));
 
         mockMvc.perform(get("/api/v1/skills"))
@@ -175,7 +175,7 @@ class ClawHubCompatControllerTest {
 
     @Test
     void listSkills_shouldReturnLabelsWhenIncluded() throws Exception {
-        when(skillSearchAppService.search(eq(""), isNull(), eq("newest"), eq(0), eq(25), isNull(), isNull()))
+        when(skillSearchAppService.searchInstallableLatest(eq(""), isNull(), eq("newest"), eq(0), eq(25), isNull(), isNull()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(summary(7L)), 1, 0, 25));
         when(skillLabelProjectionService.labelsBySkillIds(List.of(7L)))
                 .thenReturn(java.util.Map.of(

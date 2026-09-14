@@ -42,6 +42,7 @@ function toFormState(definition?: LabelDefinition): LabelFormState {
     return {
       slug: '',
       type: 'RECOMMENDED',
+      category: 'GENERAL',
       visibleInFilter: true,
       sortOrder: 0,
       translations: [{ ...EMPTY_TRANSLATION }],
@@ -51,6 +52,7 @@ function toFormState(definition?: LabelDefinition): LabelFormState {
   return {
     slug: definition.slug,
     type: definition.type === 'PRIVILEGED' ? 'PRIVILEGED' : 'RECOMMENDED',
+    category: definition.category ?? 'GENERAL',
     visibleInFilter: definition.visibleInFilter,
     sortOrder: definition.sortOrder,
     translations: definition.translations.length > 0 ? definition.translations : [{ ...EMPTY_TRANSLATION }],
@@ -194,6 +196,7 @@ export function AdminLabelsPage() {
           slug: editingSlug,
           request: {
             type: normalized.type,
+            category: normalized.category,
             visibleInFilter: normalized.visibleInFilter,
             sortOrder: normalized.sortOrder,
             translations: normalized.translations,
@@ -289,6 +292,7 @@ export function AdminLabelsPage() {
               <TableRow>
                 <TableHead>{t('adminLabels.colLabel')}</TableHead>
                 <TableHead>{t('adminLabels.colType')}</TableHead>
+                <TableHead>{t('adminLabels.formCategory')}</TableHead>
                 <TableHead>{t('adminLabels.colVisibility')}</TableHead>
                 <TableHead>{t('adminLabels.colSortOrder')}</TableHead>
                 <TableHead>{t('adminLabels.colTranslations')}</TableHead>
@@ -306,6 +310,7 @@ export function AdminLabelsPage() {
                     </div>
                   </TableCell>
                   <TableCell>{definition.type}</TableCell>
+                  <TableCell>{t('labelCategories.' + (definition.category ?? 'GENERAL'))}</TableCell>
                   <TableCell>
                     {definition.visibleInFilter ? t('adminLabels.visibilityVisible') : t('adminLabels.visibilityHidden')}
                   </TableCell>
@@ -380,6 +385,20 @@ export function AdminLabelsPage() {
                 <SelectContent>
                   <SelectItem value="RECOMMENDED">{t('adminLabels.typeRecommended')}</SelectItem>
                   <SelectItem value="PRIVILEGED">{t('adminLabels.typePrivileged')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="label-category">{t('adminLabels.formCategory')}</Label>
+              <Select
+                value={form.category ?? 'GENERAL'}
+                onValueChange={(value) => setForm((current) => ({ ...current, category: value as LabelFormState['category'] }))}
+              >
+                <SelectTrigger id="label-category"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(['WORKFLOW', 'ROLE', 'GENERAL'] as const).map((category) => (
+                    <SelectItem key={category} value={category}>{t('labelCategories.' + category)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

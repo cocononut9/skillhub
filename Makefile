@@ -1,4 +1,4 @@
-.PHONY: build build-backend build-backend-app build-builtin-skills build-cli build-frontend build-web check clean cli-install db-reset dev dev-all dev-all-down dev-all-reset dev-down dev-logs dev-server dev-server-restart dev-status dev-web docs-build docs-dev docs-preview generate-api help lint-cli lint-web namespace-smoke parallel-down parallel-init parallel-sync parallel-up pr publish-cli publish-cli-major publish-cli-minor staging staging-down staging-logs test test-backend test-backend-app test-builtin-skills test-cli test-e2e-frontend test-e2e-smoke-frontend test-frontend test-redis-cluster test-web typecheck-cli typecheck-web validate-release-config web-deps web-install web-install-ci
+.PHONY: build build-backend build-backend-app build-builtin-skills build-cli build-frontend build-web check clean cli-install db-reset dev dev-all dev-all-down dev-all-reset dev-down dev-logs dev-server dev-server-restart dev-status dev-web docs-build docs-dev docs-preview generate-api help lint-cli lint-web namespace-smoke suite-smoke parallel-down parallel-init parallel-sync parallel-up pr publish-cli publish-cli-major publish-cli-minor staging staging-down staging-logs test test-backend test-backend-app test-builtin-skills test-cli test-e2e-frontend test-e2e-smoke-frontend test-frontend test-redis-cluster test-web typecheck-cli typecheck-web validate-release-config web-deps web-install web-install-ci
 
 DEV_DIR := .dev
 DEV_SERVER_PID := $(DEV_DIR)/server.pid
@@ -147,6 +147,9 @@ dev-server-restart: ## 重启后端开发服务器
 namespace-smoke: ## 运行命名空间工作流 smoke test
 	./scripts/namespace-smoke-test.sh $(DEV_API_URL)
 
+suite-smoke: ## 运行 Skill Suite 生命周期 smoke test
+	./scripts/suite-smoke-test.sh $(DEV_API_URL)
+
 dev-down: ## 停止本地开发环境（含 skill-scanner）
 	$(DEV_COMPOSE) down --remove-orphans
 
@@ -219,9 +222,11 @@ clean: ## 清理构建产物
 	$(DEV_COMPOSE) down -v
 	rm -rf $(DEV_DIR)
 
-generate-api: ## 生成 OpenAPI 类型（前端用）
+OPENAPI_SOURCE ?= http://localhost:8080/v3/api-docs
+
+generate-api: ## 生成 OpenAPI 类型（前端用，可指定 OPENAPI_SOURCE）
 	@echo "Generating OpenAPI types..."
-	cd web && pnpm run generate-api
+	cd web && pnpm exec openapi-typescript "$(OPENAPI_SOURCE)" -o src/api/generated/schema.d.ts
 
 web-install: ## 安装前端依赖
 	cd web && pnpm install

@@ -27,10 +27,6 @@ vi.mock('@/features/auth/use-auth', () => ({
   }),
 }))
 
-vi.mock('@/shared/components/language-switcher', () => ({
-  LanguageSwitcher: () => null,
-}))
-
 vi.mock('@/shared/components/user-menu', () => ({
   UserMenu: () => null,
 }))
